@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>西沃智慧宠物 · 导航入口</title>
+    <meta http-equiv="refresh" content="2;url=http://localhost:3000/teacher">
+    <style>
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #FAF6EE;
+            background-image: radial-gradient(#E3DAC6 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
+            color: #2C3531;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #FFFFFF;
+            padding: 36px 32px;
+            border-radius: 26px;
+            border: 3px solid #E6DFCE;
+            border-bottom: 6px solid #D5CBB6;
+            text-align: center;
+            max-width: 480px;
+            box-shadow: 0 18px 40px rgba(70, 58, 38, 0.12);
+        }
+        h1 { font-size: 21px; font-weight: 800; color: #2C3531; margin: 0 0 12px 0; }
+        p { font-size: 14px; font-weight: 600; color: #68736D; line-height: 1.6; margin: 8px 0; }
+        .btn-group { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
+        .btn {
+            display: inline-block;
+            padding: 11px 22px;
+            background: #34B37E;
+            border-bottom: 4px solid #228B5E;
+            color: white;
+            text-decoration: none;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        .btn.student {
+            background: #FF9F2E;
+            border-bottom-color: #D9790B;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .tip { font-size: 12px; margin-top: 20px; color: #939E98; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🐾 西沃智慧宠物 · 萌宠庭院系统</h1>
+        <p>全班萌宠手办展柜与学生互动庭院已准备就绪。</p>
+        <p>正在自动为您跳转至教师大屏管控台...</p>
+        <div class="btn-group">
+            <a class="btn" href="http://localhost:3000/teacher">🖥️ 教师大屏管控台</a>
+            <a class="btn student" href="http://localhost:3000/student">🏡 学生端萌宠小窝</a>
+        </div>
+        <div class="tip">如尚未启动服务，请在项目根目录下双击「启动班级宠物.bat」。</div>
+    </div>
+</body>
+</html>

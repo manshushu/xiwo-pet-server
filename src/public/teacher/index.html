@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西沃智慧宠物 · 教师机管控台</title>
+    <link rel="stylesheet" href="/shared/css/pet.css">
+    <link rel="stylesheet" href="/shared/css/themes.css">
+    <link rel="stylesheet" href="/teacher/css/teacher.css">
+</head>
+<body>
+    <!-- 顶部教师控制栏 -->
+    <header class="teacher-header">
+        <div class="brand-section">
+            <span class="brand-logo">🐾</span>
+            <span class="brand-title">西沃智慧宠物 · 管控大屏</span>
+            <select class="class-tag" id="class-switch-select" onchange="window.teacherApp.switchClass(this.value)" style="cursor:pointer; outline:none;" title="切换当前上课班级">
+                <option value="七年级(1)班">七年级(1)班</option>
+            </select>
+        </div>
+
+        <!-- 课堂模式一键切换 -->
+        <div class="mode-bar">
+            <button class="mode-btn active" id="btn-mode-class" onclick="window.teacherApp.switchMode('class')">
+                <span>📚</span> 上课
+            </button>
+            <button class="mode-btn" id="btn-mode-interactive" onclick="window.teacherApp.switchMode('interactive')">
+                <span>🎮</span> 自由活动
+            </button>
+            <span class="mode-countdown" id="mode-countdown-timer">⏳ 05:00</span>
+        </div>
+
+        <!-- 教师专属功能组 -->
+        <div class="tool-group">
+            <button class="btn-tool" onclick="window.teacherApp.openRandomPicker()">
+                <span>🎲</span> 随机提问
+            </button>
+            <button class="btn-tool" onclick="window.teacherApp.openRosterModal()">
+                <span>👥</span> 学生管理
+            </button>
+            <button class="btn-tool" onclick="window.teacherApp.openLogsModal()">
+                <span>📜</span> 课堂日志
+            </button>
+            <button class="btn-tool" onclick="window.teacherApp.exportData()">
+                <span>💾</span> 数据备份
+            </button>
+            <button class="btn-tool" onclick="window.teacherApp.openSettingsModal()">
+                <span>⚙️</span> 设置
+            </button>
+        </div>
+    </header>
+
+    <!-- 主展示区 -->
+    <main class="main-content">
+        <!-- 实时广播与互动动态条 -->
+        <div class="bullet-bar">
+            <span class="bullet-icon">📢</span>
+            <div class="bullet-ticker" id="bullet-ticker-text">
+                系统运行正常 · 机房学生有线局域网已连接 · 上课模式进行中，学生操作锁定
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); margin-left:12px;">
+                全班学生: <span id="total-students-count" style="color:var(--primary); font-weight:600;">45</span> 人
+            </div>
+        </div>
+
+        <!-- 45 位学生宠物网格总览 -->
+        <div class="student-grid" id="students-grid-container">
+            <!-- 动态生成学生卡片 -->
+        </div>
+    </main>
+
+    <!-- 选中学生时浮现的批量打分悬浮工具栏 -->
+    <div class="floating-bar" id="floating-scoring-bar">
+        <span class="selected-count" id="selected-students-count">已选 0 人</span>
+        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(1, 0, '积极发言')">+1 发言积极</button>
+        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(2, 5, '小组互助')">+2 小组互助</button>
+        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(5, 10, '卓越表现')">+5 精彩表现</button>
+        <button class="score-btn btn-minus" onclick="window.teacherApp.applyBatchScore(-1, 0, '纪律提醒')">-1 纪律提醒</button>
+        <button class="score-btn" onclick="window.teacherApp.selectAllStudents()">全选</button>
+        <button class="score-btn" onclick="window.teacherApp.clearSelection()">取消</button>
+    </div>
+
+    <!-- 弹窗 1: 装扮审核模态框 -->
+    <div class="modal-overlay" id="modal-outfit-review">
+        <div class="modal-window">
+            <div class="modal-header">
+                <span class="modal-title">🎨 学生装扮提交审核队列</span>
+                <button class="modal-close" onclick="window.teacherApp.closeModal('modal-outfit-review')">&times;</button>
+            </div>
+            <div class="modal-body" id="outfit-review-list">
+                <div style="text-align:center; color:var(--text-muted); padding:30px;">暂无待审核装扮作品</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 2: 随机提问抽选大舞台 -->
+    <div class="modal-overlay" id="modal-random-picker">
+        <div class="modal-window" style="max-width: 480px;">
+            <div class="modal-header">
+                <span class="modal-title">🎲 课堂互动 · 随机抽取幸运学生</span>
+                <button class="modal-close" onclick="window.teacherApp.closeModal('modal-random-picker')">&times;</button>
+            </div>
+            <div class="modal-body random-stage">
+                <div class="random-pet-box" id="random-pet-stage"></div>
+                <div class="random-name" id="random-student-name">抽取中...</div>
+                <div style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">请这位同学回答本堂核心问题</div>
+                <div style="display:flex; justify-content:center; gap:10px;">
+                    <button class="score-btn btn-plus" id="btn-reward-random" onclick="window.teacherApp.rewardRandomPick(2)">
+                        🌟 回答正确 +2分
+                    </button>
+                    <button class="score-btn" onclick="window.teacherApp.startRandomRoll()">
+                        🔄 重新抽取
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 3: 单人学生操作详情 -->
+    <div class="modal-overlay" id="modal-single-student">
+        <div class="modal-window" style="max-width: 440px;">
+            <div class="modal-header">
+                <span class="modal-title" id="single-student-title">学生详情</span>
+                <button class="modal-close" onclick="window.teacherApp.closeModal('modal-single-student')">&times;</button>
+            </div>
+            <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+                <div style="display:flex; align-items:center; gap:16px;">
+                    <div id="single-student-pet" style="width:100px; height:100px;"></div>
+                    <div style="flex:1;">
+                        <div style="font-size:18px; font-weight:700;" id="single-student-name">张三</div>
+                        <div style="color:var(--text-muted); font-size:13px; margin-top:4px;" id="single-student-info">账号: s01 · 等级: Lv.1</div>
+                        <div style="color:#fbbf24; font-size:14px; margin-top:4px;" id="single-student-coins">💰 50 课堂币 · 饱腹度: 80%</div>
+                    </div>
+                </div>
+
+                <div style="border-top:1px solid var(--border-card); padding-top:12px;">
+                    <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:6px;">修改显示姓名</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" class="form-input" id="input-edit-name" placeholder="姓名">
+                        <button class="btn-tool" onclick="window.teacherApp.saveStudentName()">保存</button>
+                    </div>
+                </div>
+
+                <div style="border-top:1px solid var(--border-card); padding-top:12px;">
+                    <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:6px;">更换宠物（保留当前等级与经验）</label>
+                    <div style="display:flex; gap:8px;">
+                        <select class="form-input" id="select-switch-pet"></select>
+                        <button class="btn-tool" onclick="window.teacherApp.switchStudentPet()">更换</button>
+                    </div>
+                </div>
+
+                <div style="border-top:1px solid var(--border-card); padding-top:12px; display:flex; gap:10px;">
+                    <button class="btn-tool" style="flex:1;" onclick="window.teacherApp.resetPassword()">🔑 重置密码为123</button>
+                    <button class="btn-tool" style="flex:1;" id="btn-toggle-freeze" onclick="window.teacherApp.toggleFreeze()">⏸️ 暂停账号</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 4: 学生管理与名单批量导入 -->
+    <div class="modal-overlay" id="modal-roster">
+        <div class="modal-window">
+            <div class="modal-header">
+                <span class="modal-title">👥 班级学生管理与批量名单导入</span>
+                <button class="modal-close" onclick="window.teacherApp.closeModal('modal-roster')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+                    直接粘贴学生姓名列表（每行一个姓名），可批量自动生成学生账号与初始密码（默认密码为 123）。
+                </p>
+                <textarea class="form-textarea" id="textarea-roster" rows="8" placeholder="张晨&#10;李子涵&#10;王宇轩..."></textarea>
+                <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+                    <label style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+                        <input type="checkbox" id="checkbox-reset-all"> 重建全班（清空现有重新生成）
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-tool" onclick="window.teacherApp.submitRosterImport()">开始批量导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 5: 课堂操作日志 -->
+    <div class="modal-overlay" id="modal-logs">
+        <div class="modal-window">
+            <div class="modal-header">
+                <span class="modal-title">📜 课堂操作全量审计流水</span>
+                <button class="modal-close" onclick="window.teacherApp.closeModal('modal-logs')">&times;</button>
+            </div>
+            <div class="modal-body" id="logs-container" style="max-height:60vh; font-size:13px; display:flex; flex-direction:column; gap:8px;">
+                <!-- 动态填充日志条目目 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 6: 系统配置 -->
+    <div class="modal-overlay" id="modal-settings">
+        <div class="modal-window" style="max-width: 480px;">
+            <div class="modal-header">
+                <span class="modal-title">⚙️ 系统运行设置</span>
+                <button class="modal-close" onclick="window.teacherApp.closeModal('modal-settings')">&times;</button>
+            </div>
+            <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
+                <div>
+                    <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:6px;">班级名称</label>
+                    <input type="text" class="form-input" id="settings-class-name" value="七年级(1)班">
+                </div>
+                <div>
+                    <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:6px;">修改教师管理密码</label>
+                    <input type="password" class="form-input" id="settings-teacher-pwd" placeholder="留空则不修改">
+                </div>
+                <div>
+                    <label style="font-size:13px; color:var(--text-muted); display:block; margin-bottom:6px;">宠物领养模式</label>
+                    <select class="form-input" id="settings-adoption-mode">
+                        <option value="choose">自选模式（学生自主选择初始伙伴）</option>
+                        <option value="draw">随机抽蛋模式（每轮 3 次抽蛋机会）</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-tool" onclick="window.teacherApp.saveSettings()">保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本引入 -->
+    <script src="/shared/js/skins-catalog.js"></script>
+    <script src="/shared/js/pet-renderer.js"></script>
+    <script src="/teacher/js/teacher.js"></script>
+</body>
+</html>

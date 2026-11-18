@@ -1,0 +1,597 @@
+:root {
+    --bg-main: #FAF6EE;
+    --bg-card: #FFFFFF;
+    --bg-soft: #F3EDE0;
+    --border-card: #E6DFCE;
+    --border-lip: #D5CBB6;
+    --primary: #34B37E;
+    --primary-lip: #228B5E;
+    --primary-glow: rgba(52, 179, 126, 0.22);
+    --amber: #FF9F2E;
+    --amber-lip: #D9790B;
+    --sky: #38A3F8;
+    --sky-lip: #1D7CD0;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --text-main: #2C3531;
+    --text-muted: #68736D;
+    --radius-xl: 24px;
+    --radius-lg: 18px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-main);
+    background-image:
+        radial-gradient(circle at 10% 10%, rgba(52, 179, 126, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 85%, rgba(255, 159, 46, 0.1) 0%, transparent 45%),
+        radial-gradient(#E3DAC6 1.2px, transparent 1.2px);
+    background-size: 100% 100%, 100% 100%, 24px 24px;
+    color: var(--text-main);
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* ── 顶部教师大屏控制台头部 ──────────────────────────── */
+.teacher-header {
+    background: rgba(255, 253, 249, 0.94);
+    backdrop-filter: blur(12px);
+    border-bottom: 3px solid var(--border-card);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 18px rgba(90, 75, 50, 0.06);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #FFE8B6, #FFCA62);
+    border: 2px solid #FFFFFF;
+    border-bottom: 4px solid #E5A93C;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.brand-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: 0.3px;
+}
+
+.class-tag {
+    background: #ECFDF5;
+    border: 2px solid #A7F3D0;
+    border-bottom: 3px solid #34D399;
+    color: #065F46;
+    font-size: 13px;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+/* ── 5大课堂模式胶囊切换栏 ───────────────────────────── */
+.mode-bar {
+    display: flex;
+    align-items: center;
+    background: var(--bg-soft);
+    border: 2px solid var(--border-card);
+    border-bottom: 4px solid var(--border-lip);
+    padding: 4px;
+    border-radius: 999px;
+    gap: 4px;
+}
+
+.mode-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 800;
+    padding: 7px 15px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mode-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.mode-btn.active {
+    background: var(--primary);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.mode-countdown {
+    color: #D97706;
+    font-weight: 800;
+    font-size: 13px;
+    margin-left: 8px;
+    margin-right: 10px;
+    display: none;
+}
+
+/* ── 右侧教师工具组 ─────────────────────────────────── */
+.tool-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-tool {
+    background: #FFFFFF;
+    border: 2px solid var(--border-card);
+    border-bottom: 4px solid var(--border-lip);
+    color: var(--text-main);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition);
+}
+
+.btn-tool:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    border-bottom-color: var(--primary-lip);
+    background: #F0FDF4;
+}
+
+.btn-tool:active {
+    transform: translateY(1px);
+    border-bottom-width: 2px;
+}
+
+.badge-counter {
+    background: var(--danger);
+    color: #FFFFFF;
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+/* ── 主展示区：班级萌宠手办展柜 ──────────────────────── */
+.main-content {
+    flex: 1;
+    padding: 18px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 顶部实时广播横幅 */
+.bullet-bar {
+    height: 42px;
+    background: #FFFFFF;
+    border: 2px solid var(--border-card);
+    border-bottom: 4px solid var(--border-lip);
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.bullet-icon {
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+.bullet-ticker {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-main);
+}
+
+/* 45名学生潮玩手办展柜网格 */
+.student-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
+    gap: 14px;
+    padding-bottom: 96px;
+}
+
+.student-card {
+    background: var(--bg-card);
+    border: 2px solid var(--border-card);
+    border-bottom: 5px solid var(--border-lip);
+    border-radius: var(--radius-lg);
+    padding: 10px 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+}
+
+.student-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    border-bottom-color: var(--primary-lip);
+    box-shadow: 0 10px 22px rgba(52, 179, 126, 0.14);
+}
+
+.student-card.selected {
+    border-color: var(--primary);
+    border-bottom-color: var(--primary-lip);
+    background: #ECFDF5;
+    box-shadow: 0 0 0 3px rgba(52, 179, 126, 0.25);
+}
+
+.student-card.frozen {
+    filter: grayscale(0.85);
+    opacity: 0.58;
+}
+
+.card-top {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.card-no {
+    color: var(--text-muted);
+    font-weight: 800;
+    font-size: 11px;
+}
+
+.card-name {
+    font-weight: 800;
+    color: var(--text-main);
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.card-lvl {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #1D4ED8;
+}
+
+/* 手办橱窗微舞台 */
+.card-stage {
+    width: 92px;
+    height: 92px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--species-bg, #FFFBEB);
+    border-radius: 50%;
+    border: 2px dashed rgba(213, 203, 182, 0.6);
+}
+
+.stage-shadow {
+    position: absolute;
+    bottom: 6px;
+    width: 54px;
+    height: 10px;
+    background: radial-gradient(ellipse at center, rgba(60, 50, 35, 0.25) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+/* 卡片底部状态栏 */
+.card-bottom {
+    width: 100%;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.bar-wrap {
+    width: 100%;
+    height: 6px;
+    background: #E2E8F0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: var(--success);
+    border-radius: 999px;
+    transition: width 0.3s;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.card-coins {
+    color: #D97706;
+    font-weight: 800;
+}
+
+/* ── 底部悬浮批量打分条 ─────────────────────────────── */
+.floating-bar {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    border: 3px solid var(--primary);
+    border-bottom: 6px solid var(--primary-lip);
+    box-shadow: 0 16px 36px rgba(44, 53, 49, 0.22);
+    padding: 10px 22px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 200;
+    transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.floating-bar.active {
+    transform: translateX(-50%) translateY(0);
+}
+
+.selected-count {
+    font-size: 14px;
+    font-weight: 800;
+    color: #065F46;
+    padding-right: 10px;
+    border-right: 2px solid var(--border-card);
+}
+
+.score-btn {
+    background: var(--bg-soft);
+    border: 2px solid var(--border-card);
+    border-bottom: 3px solid var(--border-lip);
+    color: var(--text-main);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.score-btn:hover {
+    transform: translateY(-2px);
+}
+
+.score-btn.btn-plus {
+    background: #ECFDF5;
+    border-color: #6EE7B7;
+    border-bottom-color: #10B981;
+    color: #065F46;
+}
+
+.score-btn.btn-minus {
+    background: #FEF2F2;
+    border-color: #FCA5A5;
+    border-bottom-color: #EF4444;
+    color: #991B1B;
+}
+
+/* ── 模态弹窗系统 ──────────────────────────────────── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(44, 53, 49, 0.45);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-window {
+    background: var(--bg-main);
+    border: 4px solid #FFFFFF;
+    border-bottom: 6px solid var(--border-lip);
+    border-radius: var(--radius-xl);
+    width: 92%;
+    max-width: 720px;
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 48px rgba(40, 35, 25, 0.22);
+    overflow: hidden;
+}
+
+.modal-header {
+    background: #FFFFFF;
+    padding: 16px 22px;
+    border-bottom: 2px solid var(--border-card);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.modal-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg-soft);
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.modal-body {
+    padding: 20px 22px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    background: #FFFFFF;
+    padding: 14px 22px;
+    border-top: 2px solid var(--border-card);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* 装扮审核卡片 */
+.outfit-review-item {
+    background: #FFFFFF;
+    border: 2px solid var(--border-card);
+    border-bottom: 4px solid var(--border-lip);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.outfit-preview-box {
+    width: 104px;
+    height: 104px;
+    background: var(--bg-main);
+    border-radius: 50%;
+    border: 2px dashed var(--border-lip);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.outfit-detail-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #ECFDF5;
+    color: #047857;
+    border: 1.5px solid #6EE7B7;
+    width: fit-content;
+}
+
+.form-input, .form-textarea {
+    width: 100%;
+    background: #FFFFFF;
+    border: 2px solid var(--border-card);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    padding: 9px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    outline: none;
+    transition: var(--transition);
+}
+
+.form-input:focus, .form-textarea:focus {
+    border-color: var(--primary);
+}
+
+/* 随机抽选展示大舞台 */
+.random-stage {
+    text-align: center;
+    padding: 28px;
+}
+
+.random-pet-box {
+    width: 168px;
+    height: 168px;
+    margin: 0 auto 16px auto;
+    background: #FFFFFF;
+    border-radius: 50%;
+    border: 4px solid #FDE68A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.15);
+}
+
+.random-name {
+    font-size: 24px;
+    font-weight: 800;
+    color: #D97706;
+    margin-bottom: 8px;
+}

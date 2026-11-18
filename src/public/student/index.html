@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>正在进入学生端...</title>
+    <script>
+        fetch('/api/auth/current')
+            .then(res => res.json())
+            .then(data => {
+                if (data.loggedIn && data.role === 'student') {
+                    window.location.replace('/student/app.html');
+                } else {
+                    window.location.replace('/student/login.html');
+                }
+            })
+            .catch(() => {
+                window.location.replace('/student/login.html');
+            });
+    </script>
+</head>
+<body></body>
+</html>

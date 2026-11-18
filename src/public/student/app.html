@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的萌宠小窝 · 西沃智慧宠物</title>
+    <link rel="stylesheet" href="/shared/css/pet.css">
+    <link rel="stylesheet" href="/shared/css/themes.css">
+    <link rel="stylesheet" href="/student/css/student.css">
+</head>
+<body>
+    <!-- 顶部森友会风状态导航栏 -->
+    <header class="student-nav">
+        <div class="profile-section">
+            <div class="avatar-badge" id="nav-species-icon">🐾</div>
+            <div class="student-name-box">
+                <span class="student-display-name" id="user-display-name">01号 张晨</span>
+                <span class="student-sub-info" id="user-sub-info">学号: s01 · 阳光木屋庭院</span>
+            </div>
+        </div>
+
+        <div class="stats-group">
+            <div class="stat-item stat-coin-pill">
+                <span class="stat-emoji">💰</span>
+                <span class="coins-val" id="stat-coins">60</span>
+            </div>
+            <div class="stat-item stat-fullness-pill">
+                <span class="stat-emoji">🍖</span>
+                <div class="fullness-progress-wrap" title="饱腹度">
+                    <div class="fullness-progress-fill" id="stat-fullness-fill" style="width: 80%;"></div>
+                </div>
+                <span id="stat-fullness-text">80%</span>
+            </div>
+            <div class="stat-item stat-level-pill">
+                <span class="stat-emoji">⭐</span>
+                <span class="level-val" id="stat-level">Lv.1</span>
+                <span class="evo-tag" id="stat-evo-tag">幼年</span>
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <button class="btn-nav" onclick="window.studentApp.openModal('modal-rules')">📖 积分规则</button>
+            <button class="btn-nav" onclick="window.studentApp.openLogsModal()">📜 足迹</button>
+            <button class="btn-nav" onclick="window.studentApp.openPasswordModal()">🔑 密码</button>
+            <button class="btn-nav" onclick="window.studentApp.handleLogout()">🚪 退出</button>
+        </div>
+    </header>
+
+    <!-- 课堂模式与权限提示横幅 -->
+    <div class="mode-banner mode-class" id="mode-banner">
+        <span id="mode-banner-icon">📚</span>
+        <span id="mode-banner-text">上课专注模式进行中，请专心听讲，积极互动赢取课堂币！</span>
+        <span id="mode-banner-timer" style="display:none; margin-left:8px;">⏳ 04:59</span>
+    </div>
+
+    <!-- 主展示区：可漫步的宠物小窝庭院画框 -->
+    <main class="student-main-stage">
+        <div class="courtyard-frame" id="courtyard-frame">
+            <!-- 场景背景图层（由物种自动匹配） -->
+            <div class="courtyard-bg" id="courtyard-bg" onclick="window.studentApp.handleCourtyardGroundClick(event)"></div>
+
+            <!-- 顶部庭院铭牌与串门状态栏 -->
+            <div class="courtyard-top-bar">
+                <div class="scene-badge" id="courtyard-scene-badge">
+                    <span>🏡</span>
+                    <span id="courtyard-scene-title">阳光木屋</span>
+                </div>
+
+                <!-- 串门模式专属操作条 -->
+                <div class="visit-banner-bar" id="visit-banner-bar" style="display:none;">
+                    <span id="visit-host-label">串门中</span>
+                    <button class="btn-visit-action" onclick="window.studentApp.handleVisitInteract('highfive')">🤝 贴贴</button>
+                    <button class="btn-visit-action treat" onclick="window.studentApp.handleVisitInteract('treat')">🎁 送零食(-3💰)</button>
+                    <button class="btn-visit-back" onclick="window.studentApp.exitVisitMode()">↩ 回家</button>
+                </div>
+
+                <!-- 快捷部位互动胶囊组 -->
+                <div class="quick-pet-actions" id="quick-pet-actions">
+                    <button class="btn-mini-act" onclick="window.studentApp.handlePetTouch('head', event)">👋 摸头</button>
+                    <button class="btn-mini-act" onclick="window.studentApp.handlePetTouch('belly', event)">✨ 挠肚</button>
+                    <button class="btn-mini-act" onclick="window.studentApp.triggerPetJump(event)">🤸 跳跳</button>
+                </div>
+            </div>
+
+            <!-- 主宠物活动容器（支持 X/Y 漫步位移与朝向翻转） -->
+            <div class="pet-hero-wrap" id="pet-hero-wrap" style="left: 50%; top: 68%;" onclick="window.studentApp.handlePetTouch('head', event)">
+                <div class="pet-speech-dialogue" id="pet-dialogue">
+                    主人，认真听讲，一会陪你玩！✨
+                </div>
+                <div class="pet-hero-shadow"></div>
+                <div class="pet-flip-box" id="pet-flip-box">
+                    <div class="pet-rig" id="pet-hero-rig">
+                        <!-- 动态渲染高精矢量骨骼宠物 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 串门时自家跟随出场的客串宠物容器 -->
+            <div class="pet-hero-wrap visitor-pet-wrap" id="visitor-pet-wrap" style="display:none; left: 32%; top: 72%;">
+                <div class="pet-speech-dialogue visitor-dialogue" id="visitor-dialogue">来找你玩啦~ 🐾</div>
+                <div class="pet-hero-shadow"></div>
+                <div class="pet-flip-box" id="visitor-flip-box">
+                    <div class="pet-rig" id="visitor-pet-rig"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部主操作船坞 -->
+        <div class="action-dock">
+            <button class="btn-dock" id="btn-action-touch" onclick="window.studentApp.handlePetTouch('head')">
+                <span>🐾</span> 摸摸
+            </button>
+            <button class="btn-dock food-btn" id="btn-action-feed" onclick="window.studentApp.openFoodShop()">
+                <span>🍱</span> 喂食
+            </button>
+            <button class="btn-dock" id="btn-action-closet" onclick="window.studentApp.openSkinCloset()">
+                <span>🦊</span> 物种
+            </button>
+            <button class="btn-dock highlight" id="btn-action-dex" onclick="window.studentApp.openDexModal()">
+                <span>🏆</span> 图鉴
+            </button>
+            <button class="btn-dock social-btn" id="btn-action-plaza" onclick="window.studentApp.openPlaza('neighbors')">
+                <span>🏘️</span> 串门
+            </button>
+            <button class="btn-dock highlight" id="btn-action-next-round" style="display:none;" onclick="window.studentApp.startNextRound()">
+                <span>🥚</span> 领养新宠
+            </button>
+            <button class="btn-dock export-btn" id="btn-action-export" onclick="window.studentApp.exportPetToMindPlus()" title="导出Mind+角色包 (.sprite3)">
+                <span>🎮</span> 导出
+            </button>
+        </div>
+    </main>
+
+    <!-- 弹窗 0: 美食投喂 -->
+    <div class="modal-overlay" id="modal-food-shop">
+        <div class="modal-box" style="max-width: 720px;">
+            <div class="modal-header">
+                <span class="modal-title">🍱 喂食</span>
+                <span class="food-coins-now" style="margin-left:auto; margin-right:12px;"><strong id="food-modal-coins">60</strong> 💰</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-food-shop')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="food-grid" id="food-items-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 1: 换装工坊 -->
+    <div class="modal-overlay" id="modal-editor">
+        <div class="modal-box" style="max-width: 860px;">
+            <div class="modal-header">
+                <span class="modal-title">👕 换装</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-editor')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="editor-layout">
+                    <!-- 左侧实时手办预览盒 -->
+                    <div class="editor-preview-pane">
+                        <div class="editor-pet-box" id="editor-preview-stage"></div>
+                        <div class="editor-skin-title" id="editor-preview-skinname">暖萌小橘</div>
+                        <div class="editor-skin-sub" id="editor-preview-evotext">实时穿戴与捏脸预览</div>
+
+                        <div class="hue-control-card">
+                            <label class="hue-label-row">
+                                <span>🎨 本体毛色微调</span>
+                                <span id="hue-val-display">原色 0°</span>
+                            </label>
+                            <input type="range" min="0" max="360" value="0" id="input-hue-range" oninput="window.studentApp.onHueChange(this.value)">
+                            <div class="hue-presets">
+                                <button type="button" class="hue-dot" style="background:#ff9800;" onclick="window.studentApp.onHueChange(0)" title="原色"></button>
+                                <button type="button" class="hue-dot" style="background:#f472b6;" onclick="window.studentApp.onHueChange(310)" title="樱花粉"></button>
+                                <button type="button" class="hue-dot" style="background:#38bdf8;" onclick="window.studentApp.onHueChange(190)" title="晴空蓝"></button>
+                                <button type="button" class="hue-dot" style="background:#a78bfa;" onclick="window.studentApp.onHueChange(250)" title="香芋紫"></button>
+                                <button type="button" class="hue-dot" style="background:#34d399;" onclick="window.studentApp.onHueChange(120)" title="薄荷绿"></button>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-clear-acc" onclick="window.studentApp.resetEditorAccessories()">
+                            🔄 一键恢复默认装扮
+                        </button>
+                    </div>
+
+                    <!-- 右侧分类定制工作台 -->
+                    <div class="editor-controls-pane">
+                        <!-- 6大部位切换标签 -->
+                        <div class="editor-tabs" id="editor-category-tabs">
+                            <button type="button" class="editor-tab active" data-cat="face" onclick="window.studentApp.switchEditorTab('face')">😊 五官</button>
+                            <button type="button" class="editor-tab" data-cat="head" onclick="window.studentApp.switchEditorTab('head')">🎩 头饰</button>
+                            <button type="button" class="editor-tab" data-cat="eyes" onclick="window.studentApp.switchEditorTab('eyes')">👓 眼饰</button>
+                            <button type="button" class="editor-tab" data-cat="neck_back" onclick="window.studentApp.switchEditorTab('neck_back')">🪽 背颈</button>
+                            <button type="button" class="editor-tab" data-cat="hand" onclick="window.studentApp.switchEditorTab('hand')">🪄 手持</button>
+                            <button type="button" class="editor-tab" data-cat="aura" onclick="window.studentApp.switchEditorTab('aura')">✨ 光效</button>
+                        </div>
+
+                        <!-- 配件/五官选择区 -->
+                        <div class="editor-items-scroll" id="editor-acc-grid"></div>
+
+                        <!-- 作品命名与发布栏 -->
+                        <div class="editor-publish-box">
+                            <div class="publish-input-row">
+                                <input type="text" class="form-input" id="input-outfit-name" placeholder="造型名称（投稿必填）">
+                            </div>
+                            <div id="ai-review-feedback" style="display:none; padding:10px 14px; border-radius:12px; font-size:13px; margin-top:8px;"></div>
+                            <div class="editor-action-btns">
+                                <button class="btn-dock" onclick="window.studentApp.saveOutfitLocal()">💾 穿戴</button>
+                                <button class="btn-dock highlight" id="btn-submit-outfit" onclick="window.studentApp.submitOutfitToPlaza()">
+                                    🚀 投稿广场
+                                </button>
+                                <button class="btn-dock export-btn" id="btn-editor-export" style="display:none;" onclick="window.studentApp.exportFromEditor()" title="导出Mind+角色包">
+                                    🎮 导出
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 2: 串门邻里街与装扮广场 -->
+    <div class="modal-overlay" id="modal-plaza">
+        <div class="modal-box" style="max-width: 880px;">
+            <div class="modal-header">
+                <div class="plaza-header-tabs">
+                    <button class="plaza-tab-btn active" id="tab-btn-neighbors" onclick="window.studentApp.switchPlazaTab('neighbors')">🏘️ 邻里串门</button>
+                </div>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-plaza')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 邻里街串门列表 -->
+                <div class="plaza-grid" id="neighbors-items-container"></div>
+                <!-- 装扮展廊列表 -->
+                <div class="plaza-grid" id="plaza-items-container" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 3: 物种图鉴 -->
+    <div class="modal-overlay" id="modal-closet">
+        <div class="modal-box" style="max-width: 860px;">
+            <div class="modal-header">
+                <span class="modal-title">🦊 伙伴图鉴</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-closet')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="plaza-grid" id="closet-skins-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 4: 修改密码 -->
+    <div class="modal-overlay" id="modal-password">
+        <div class="modal-box" style="max-width: 420px;">
+            <div class="modal-header">
+                <span class="modal-title">🔑 修改个人登录密码</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-password')">&times;</button>
+            </div>
+            <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+                <input type="password" class="form-input" id="pwd-old" placeholder="当前原密码">
+                <input type="password" class="form-input" id="pwd-new" placeholder="设置新密码 (至少3位)">
+                <div id="pwd-feedback" style="font-size:13px; display:none;"></div>
+                <button class="btn-dock highlight" style="justify-content:center;" onclick="window.studentApp.submitChangePassword()">确认修改密码</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 5: 成长记录日志 -->
+    <div class="modal-overlay" id="modal-logs">
+        <div class="modal-box" style="max-width: 560px;">
+            <div class="modal-header">
+                <span class="modal-title">📜 个人课堂积分与互动足迹</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-logs')">&times;</button>
+            </div>
+            <div class="modal-body" id="student-logs-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+    </div>
+
+    <!-- 弹窗 6: 选择或抽取初始伙伴 -->
+    <div class="modal-overlay" id="modal-starter-adopt">
+        <div class="modal-box" style="max-width: 920px;">
+            <div class="modal-header">
+                <span class="modal-title" id="starter-adopt-title">🌟 领养你的成长伙伴</span>
+            </div>
+            <div class="modal-body">
+                <div class="starter-adopt-grid" id="starter-adopt-grid"></div>
+                <div id="starter-draw-panel" style="display:none; text-align:center; padding: 12px 0;">
+                    <div id="starter-draw-preview" style="display:flex; justify-content:center; align-items:center; min-height: 170px;"></div>
+                    <div id="starter-draw-name" style="font-size:20px; font-weight:700; margin: 10px 0 4px;">神秘宠物蛋</div>
+                    <div id="starter-draw-desc" style="font-size:13px; color:#64748b; margin-bottom:18px;">点击下方按钮唤醒你的专属伙伴（每轮最多 3 次抽蛋机会）</div>
+                    <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                        <button class="btn-dock highlight" id="btn-draw-egg" onclick="window.studentApp.drawStarterEgg()">🥚 随机抽蛋 (剩余 3 次)</button>
+                        <button class="btn-dock food-btn" id="btn-confirm-egg" style="display:none;" onclick="window.studentApp.confirmStarterEgg()">✨ 确认领养这只</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 7: 个人满级荣誉图鉴 -->
+    <div class="modal-overlay" id="modal-dex">
+        <div class="modal-box" style="max-width: 820px;">
+            <div class="modal-header">
+                <span class="modal-title">🏆 个人满级荣誉图鉴</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-dex')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="dex-empty-tip" style="text-align:center; padding: 32px 12px; color:#64748b; display:none;">
+                    暂未点亮满级伙伴。积极攒积分，将宠物培养到 Lv.10 即可永久收录进图鉴并生成荣誉奖状！
+                </div>
+                <div class="plaza-grid" id="dex-items-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 8: 进化高光庆祝 -->
+    <div class="modal-overlay" id="modal-evolution">
+        <div class="modal-box evo-celebrate-box" style="max-width: 520px; text-align:center;">
+            <div class="evo-light-beam"></div>
+            <div class="modal-body" style="position:relative; z-index:2; padding: 28px 20px;">
+                <div id="evo-celebrate-badge" style="font-size:14px; font-weight:700; color:#d97706; margin-bottom:8px;">✨ 形态突破 ✨</div>
+                <h2 id="evo-celebrate-title" style="margin:0 0 12px; font-size:24px; color:#1e293b;">宠物进化成功！</h2>
+                <div id="evo-celebrate-pet" style="display:flex; justify-content:center; margin: 12px 0;"></div>
+                <p id="evo-celebrate-desc" style="font-size:14px; color:#475569; margin: 10px 0 20px;"></p>
+                <button class="btn-dock highlight" style="margin:0 auto;" onclick="window.studentApp.closeModal('modal-evolution')">太棒了！</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 9: A4 满级荣誉奖状 -->
+    <div class="modal-overlay" id="modal-certificate">
+        <div class="modal-box cert-modal-box" style="max-width: 820px;">
+            <div class="modal-header no-print">
+                <span class="modal-title">📜 满级荣誉奖状预览</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn-dock highlight" onclick="window.print()">🖨️ 打印 / 另存 PDF</button>
+                    <button class="modal-close" onclick="window.studentApp.closeModal('modal-certificate')">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="a4-certificate" id="a4-certificate-sheet">
+                    <div class="cert-border-inner">
+                        <div class="cert-header-tag">CLASS PET HONOR CERTIFICATE</div>
+                        <h1 class="cert-main-title">班级宠物满级荣誉奖状</h1>
+                        <p class="cert-body-text">
+                            兹表彰 <strong id="cert-class-name">七年级(1)班</strong> <strong id="cert-student-name">同学</strong>：
+                            在日常学习与课堂表现中积极进取，成功将成长伙伴 <strong id="cert-pet-name">焰尾小火狐</strong> 培养至 <strong>Lv.10 满级终极形态</strong>，特发此证，以资鼓励！
+                        </p>
+                        <div class="cert-pet-showcase" id="cert-pet-preview"></div>
+                        <div class="cert-footer">
+                            <div class="cert-date" id="cert-date-text">2026年11月13日</div>
+                            <div class="cert-stamp">满级认证<br>荣誉印章</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 积分规则弹窗 -->
+    <div class="modal-overlay" id="modal-rules" onclick="if(event.target===this) window.studentApp.closeModal('modal-rules')">
+        <div class="modal-box" style="max-width: 1020px; width: 94vw;">
+            <div class="modal-header">
+                <span class="modal-title">📖 课堂作业与宠物积分规则</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-rules')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 12px; text-align: center;">
+                <img src="/shared/assets/score_rules_poster.png" alt="课堂作业与宠物积分规则图" style="width: 100%; height: auto; border-radius: 12px; display: block;">
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入脚本 -->
+    <script src="/shared/js/skins-catalog.js"></script>
+    <script src="/shared/js/pet-renderer.js"></script>
+    <script src="/shared/js/sprite3-exporter.js"></script>
+    <script src="/student/js/student.js"></script>
+</body>
+</html>

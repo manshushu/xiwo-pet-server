@@ -1,0 +1,13 @@
+/* 物种卡片主题微调与展示底色配置 v2.0 */
+.skin-default_cat { --species-accent: #ff9800; --species-bg: #fff8eb; }
+.skin-shiba_sunny { --species-accent: #f59e0b; --species-bg: #fef3c7; }
+.skin-capybara_zen { --species-accent: #b47b44; --species-bg: #f5ebe1; }
+.skin-mech_dog { --species-accent: #00b8d4; --species-bg: #e0f7fa; }
+.skin-bamboo_panda { --species-accent: #4caf50; --species-bg: #ecfdf5; }
+.skin-chubby_penguin { --species-accent: #38a3f8; --species-bg: #e0f2fe; }
+.skin-fire_dragon { --species-accent: #ff5722; --species-bg: #ffedd5; }
+.skin-ice_spirit { --species-accent: #26c6da; --species-bg: #ecfeff; }
+.skin-magic_fox { --species-accent: #f472b6; --species-bg: #fdf2f8; }
+.skin-astro_cat { --species-accent: #9b72f2; --species-bg: #f3e8ff; }
+.skin-lucky_cat { --species-accent: #ffb300; --species-bg: #fef9c3; }
+.skin-sky_dragon { --species-accent: #ffd54f; --species-bg: #fffbeb; }

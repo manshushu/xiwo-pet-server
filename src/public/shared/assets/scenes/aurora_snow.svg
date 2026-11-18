@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+    <defs>
+        <linearGradient id="auroraSky" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#1e293b" />
+            <stop offset="45%" stop-color="#0f766e" />
+            <stop offset="80%" stop-color="#5eead4" />
+            <stop offset="100%" stop-color="#ccfbf1" />
+        </linearGradient>
+        <linearGradient id="auroraRibbon1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#34d399" stop-opacity="0.1" />
+            <stop offset="35%" stop-color="#6ee7b7" stop-opacity="0.65" />
+            <stop offset="70%" stop-color="#f472b6" stop-opacity="0.55" />
+            <stop offset="100%" stop-color="#c084fc" stop-opacity="0.1" />
+        </linearGradient>
+        <linearGradient id="snowGround" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="40%" stop-color="#f0fdfa" />
+            <stop offset="100%" stop-color="#e0f2fe" />
+        </linearGradient>
+        <linearGradient id="iglooGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="65%" stop-color="#e0f2fe" />
+            <stop offset="100%" stop-color="#bae6fd" />
+        </linearGradient>
+    </defs>
+
+    <!-- 梦幻极光天空 -->
+    <rect width="1280" height="480" fill="url(#auroraSky)" />
+
+    <!-- 极光绸带 -->
+    <path d="M0,180 Q320,60 640,160 T1280,120 L1280,250 Q960,290 640,210 T0,270 Z" fill="url(#auroraRibbon1)" />
+    <path d="M0,110 Q420,210 820,90 T1280,170 L1280,220 Q820,150 420,250 T0,160 Z" fill="url(#auroraRibbon1)" opacity="0.7" />
+
+    <!-- 远景雪山（圆润3D黏土风） -->
+    <path d="M-40,460 Q180,220 420,460 Z" fill="#cffafe" />
+    <path d="M280,460 Q560,190 840,460 Z" fill="#e0f2fe" />
+    <path d="M740,460 Q1020,210 1320,460 Z" fill="#cffafe" />
+
+    <!-- 后景圆润冰屋 (左侧) -->
+    <g transform="translate(120, 260)">
+        <path d="M20,180 A130,125 0 0,1 280,180 Z" fill="url(#iglooGrad)" stroke="#7dd3fc" stroke-width="5" />
+        <path d="M110,180 A45,52 0 0,1 200,180 Z" fill="#fef08a" stroke="#7dd3fc" stroke-width="5" />
+        <!-- 冰屋温暖灯光 -->
+        <ellipse cx="155" cy="182" rx="45" ry="12" fill="#fde047" opacity="0.55" />
+    </g>
+
+    <!-- 冰晶珊瑚树与积雪松树 (右侧与左侧) -->
+    <g transform="translate(940, 230)">
+        <polygon points="80,20 20,130 140,130" fill="#2dd4bf" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" />
+        <polygon points="80,75 5,195 155,195" fill="#14b8a6" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" />
+        <rect x="66" y="195" width="28" height="35" rx="6" fill="#78350f" />
+    </g>
+    <g transform="translate(1080, 270)">
+        <polygon points="60,20 12,110 108,110" fill="#5eead4" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" />
+        <polygon points="60,65 0,165 120,165" fill="#2dd4bf" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" />
+        <rect x="48" y="165" width="24" height="28" rx="5" fill="#78350f" />
+    </g>
+
+    <!-- 发光冰晶簇 -->
+    <g transform="translate(460, 350)">
+        <polygon points="30,90 15,35 32,10 48,35 42,90" fill="#a5f3fc" stroke="#ffffff" stroke-width="3" opacity="0.9" />
+        <polygon points="50,90 45,48 62,25 74,50 66,90" fill="#f9a8d4" stroke="#ffffff" stroke-width="3" opacity="0.85" />
+    </g>
+
+    <!-- 前景开阔平整的极光雪坪（供2D宠物漫步） -->
+    <path d="M0,440 Q640,415 1280,440 L1280,720 L0,720 Z" fill="url(#snowGround)" />
+    <!-- 柔和雪地石板步道 -->
+    <ellipse cx="420" cy="560" rx="95" ry="30" fill="#e0f2fe" stroke="#bae6fd" stroke-width="4" />
+    <ellipse cx="650" cy="590" rx="115" ry="36" fill="#e0f2fe" stroke="#bae6fd" stroke-width="4" />
+    <ellipse cx="880" cy="565" rx="95" ry="30" fill="#e0f2fe" stroke="#bae6fd" stroke-width="4" />
+
+    <!-- 飘落星雪点缀 -->
+    <g fill="#ffffff" opacity="0.9">
+        <circle cx="180" cy="90" r="4" /><circle cx="390" cy="70" r="5" /><circle cx="670" cy="95" r="4" />
+        <circle cx="890" cy="65" r="5" /><circle cx="1120" cy="105" r="4" /><circle cx="540" cy="175" r="3.5" />
+        <circle cx="810" cy="190" r="4" />
+    </g>
+</svg>

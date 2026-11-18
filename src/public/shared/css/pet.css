@@ -1,0 +1,264 @@
+/* 宠物矢量实体与骨骼关键帧动画系统 v2.0 (支持庭院漫步、四肢摆动、咀嚼、打盹与进化特效) */
+.pet-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.18s ease-out;
+    filter: drop-shadow(0 10px 14px rgba(66, 52, 35, 0.22));
+    user-select: none;
+}
+
+/* 宠物骨架包裹器 */
+.pet-rig {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-origin: bottom center;
+    animation: petBreathe 3s infinite ease-in-out;
+}
+
+@keyframes petBreathe {
+    0%, 100% { transform: scale(1, 1) translateY(0); }
+    50% { transform: scale(1.03, 0.97) translateY(1px); }
+}
+
+/* 宠物身体 SVG 矢量容器 */
+.pet-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+}
+
+/* 耳朵灵动微晃动动画 */
+.ear-left, .ear-right {
+    transform-boxes: fill-box;
+    transform-box: fill-box;
+    transform-origin: bottom center;
+    animation: earTwitch 4.5s infinite ease-in-out;
+}
+.ear-right {
+    animation-delay: 1.2s;
+}
+
+@keyframes earTwitch {
+    0%, 86%, 100% { transform: rotate(0deg); }
+    90% { transform: rotate(-9deg); }
+    95% { transform: rotate(7deg); }
+}
+
+/* 眼睛自然眨眼动画 */
+.pet-eye {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: petBlink 4.2s infinite;
+}
+
+@keyframes petBlink {
+    0%, 94%, 100% { transform: scaleY(1); }
+    97% { transform: scaleY(0.08); }
+}
+
+/* 尾巴欢快摇摆 */
+.pet-tail, .pet-tail-group {
+    transform-box: fill-box;
+    transform-origin: 85% 85%;
+    animation: tailWag 2.2s infinite ease-in-out;
+}
+
+@keyframes tailWag {
+    0%, 100% { transform: rotate(-6deg); }
+    50% { transform: rotate(14deg); }
+}
+
+/* 招财猫/手臂轻摇与持物微动 */
+.pet-arm-left, .pet-arm-right, .acc-hand {
+    transform-box: fill-box;
+    transform-origin: top center;
+    animation: armSway 2.8s infinite ease-in-out;
+}
+
+@keyframes armSway {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(8deg); }
+}
+
+.pet-3d-hand {
+    transform-box: fill-box;
+    transform-origin: 50% 85%;
+    animation: hand3dSway 2.6s infinite ease-in-out;
+}
+
+@keyframes hand3dSway {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(4deg); }
+}
+
+.pet-svg-3d .acc-wings {
+    animation: wing3dFlap 2s infinite ease-in-out;
+}
+
+@keyframes wing3dFlap {
+    0%, 100% { transform: scaleX(1) translateY(0); }
+    50% { transform: scaleX(1.04) translateY(-1.5px); }
+}
+
+/* 背部翅膀扇动 */
+.acc-wings {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: wingFlap 1.8s infinite ease-in-out;
+}
+
+@keyframes wingFlap {
+    0%, 100% { transform: scaleX(1) translateY(0); }
+    50% { transform: scaleX(1.08) translateY(-3px); }
+}
+
+/* 伴生光效与觉醒星环律动 */
+.acc-aura-layer {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: auraFloat 3s infinite ease-in-out;
+}
+
+@keyframes auraFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-4px) scale(1.04); }
+}
+
+.evo-awakened-halo {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: haloRotate 14s infinite linear;
+}
+
+@keyframes haloRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ── 行走漫步状态 (is-walking) ─────────────────────────── */
+.is-walking .pet-rig {
+    animation: petWalkBob 0.42s infinite ease-in-out;
+}
+
+@keyframes petWalkBob {
+    0%, 100% { transform: translateY(0) rotate(-2deg) scale(1.02, 0.98); }
+    50% { transform: translateY(-10px) rotate(2deg) scale(0.98, 1.03); }
+}
+
+.is-walking .pet-leg-left {
+    transform-box: fill-box;
+    transform-origin: top center;
+    animation: legSwingLeft 0.42s infinite ease-in-out;
+}
+
+.is-walking .pet-leg-right {
+    transform-box: fill-box;
+    transform-origin: top center;
+    animation: legSwingRight 0.42s infinite ease-in-out;
+}
+
+@keyframes legSwingLeft {
+    0%, 100% { transform: translateY(-4px) rotate(-14deg); }
+    50% { transform: translateY(2px) rotate(14deg); }
+}
+
+@keyframes legSwingRight {
+    0%, 100% { transform: translateY(2px) rotate(14deg); }
+    50% { transform: translateY(-4px) rotate(-14deg); }
+}
+
+/* ── 进食咀嚼状态 (is-eating) ─────────────────────────── */
+.is-eating .pet-rig {
+    animation: petEatAnim 0.55s 2 ease-in-out;
+}
+
+.is-eating .pet-mouth {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: mouthChew 0.28s 4 ease-in-out;
+}
+
+@keyframes petEatAnim {
+    0%, 100% { transform: scale(1, 1) translateY(0); }
+    35% { transform: scale(1.12, 0.88) translateY(8px); }
+    70% { transform: scale(0.92, 1.08) translateY(-12px); }
+}
+
+@keyframes mouthChew {
+    0%, 100% { transform: scale(1, 1); }
+    50% { transform: scale(1.25, 1.35); }
+}
+
+/* ── 抚摸呼噜/撒娇状态 (is-purring) ───────────────────── */
+.is-purring .pet-rig {
+    animation: petPurrAnim 0.55s 2 ease-in-out;
+}
+
+@keyframes petPurrAnim {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-7deg) scale(1.08, 0.95); }
+    75% { transform: rotate(7deg) scale(1.08, 0.95); }
+}
+
+/* ── 跳跃欢呼/升级/贴贴状态 (is-jumping / is-level-up) ── */
+.is-jumping .pet-rig,
+.is-level-up .pet-rig {
+    animation: petJumpAnim 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes petJumpAnim {
+    0% { transform: translateY(0) scale(1, 1); }
+    20% { transform: translateY(6px) scale(1.14, 0.86); }
+    50% { transform: translateY(-38px) scale(0.92, 1.1) rotate(-6deg); }
+    75% { transform: translateY(-18px) scale(1.04, 0.96) rotate(5deg); }
+    100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+}
+
+/* ── 打盹休眠状态 (is-sleeping) ───────────────────────── */
+.is-sleeping .pet-rig {
+    animation: petSleepBreathe 4s infinite ease-in-out;
+}
+
+.is-sleeping .pet-eye {
+    animation: none;
+    transform: scaleY(0.12);
+}
+
+@keyframes petSleepBreathe {
+    0%, 100% { transform: scale(1.02, 0.96) translateY(3px); }
+    50% { transform: scale(1.06, 0.92) translateY(6px); }
+}
+
+/* ── 浮动气泡与情绪胶囊 (潮玩奶油风) ─────────────────── */
+.pet-floating-bubble {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #FFFFFF;
+    border: 2px solid #F59E0B;
+    border-bottom-width: 4px;
+    color: #451A03;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 999px;
+    pointer-events: none;
+    white-space: nowrap;
+    animation: floatUpFade 2.2s forwards cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.25);
+    z-index: 60;
+}
+
+@keyframes floatUpFade {
+    0% { opacity: 0; transform: translate(-50%, 12px) scale(0.75); }
+    18% { opacity: 1; transform: translate(-50%, 0) scale(1.04); }
+    30% { opacity: 1; transform: translate(-50%, -4px) scale(1); }
+    75% { opacity: 1; transform: translate(-50%, -14px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -28px) scale(0.92); }
+}

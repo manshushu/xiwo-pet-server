@@ -1,0 +1,158 @@
+{
+  "back_fairy_butterfly": {
+    "w": 512,
+    "h": 388
+  },
+  "back_knight_cape": {
+    "w": 512,
+    "h": 476
+  },
+  "back_mecha_jet": {
+    "w": 512,
+    "h": 344
+  },
+  "back_school_bag": {
+    "w": 488,
+    "h": 512
+  },
+  "bell_collar": {
+    "w": 512,
+    "h": 486
+  },
+  "bow_tie": {
+    "w": 512,
+    "h": 287
+  },
+  "cape_royal": {
+    "w": 509,
+    "h": 512
+  },
+  "crown": {
+    "w": 512,
+    "h": 439
+  },
+  "eye_battle_patch": {
+    "w": 512,
+    "h": 323
+  },
+  "eye_heart_tint": {
+    "w": 512,
+    "h": 212
+  },
+  "eye_holo_visor": {
+    "w": 512,
+    "h": 253
+  },
+  "eye_star_gold": {
+    "w": 512,
+    "h": 213
+  },
+  "glasses_cyber": {
+    "w": 512,
+    "h": 290
+  },
+  "glasses_round": {
+    "w": 512,
+    "h": 236
+  },
+  "glasses_star": {
+    "w": 512,
+    "h": 233
+  },
+  "glasses_sun": {
+    "w": 512,
+    "h": 181
+  },
+  "halo": {
+    "w": 512,
+    "h": 287
+  },
+  "hand_balloon": {
+    "w": 396,
+    "h": 512
+  },
+  "hand_bamboo": {
+    "w": 294,
+    "h": 512
+  },
+  "hand_boba": {
+    "w": 290,
+    "h": 512
+  },
+  "hand_book": {
+    "w": 470,
+    "h": 512
+  },
+  "hand_energy_sword": {
+    "w": 203,
+    "h": 512
+  },
+  "hand_gamepad_boba": {
+    "w": 430,
+    "h": 512
+  },
+  "hand_jade_fan": {
+    "w": 512,
+    "h": 431
+  },
+  "hand_moon_wand": {
+    "w": 213,
+    "h": 512
+  },
+  "hand_wand": {
+    "w": 183,
+    "h": 512
+  },
+  "hat_beret": {
+    "w": 512,
+    "h": 412
+  },
+  "hat_cap": {
+    "w": 512,
+    "h": 404
+  },
+  "hat_wizard": {
+    "w": 512,
+    "h": 362
+  },
+  "head_bamboo_hat": {
+    "w": 512,
+    "h": 412
+  },
+  "head_cat_headphones": {
+    "w": 512,
+    "h": 498
+  },
+  "head_cyber_helmet": {
+    "w": 512,
+    "h": 428
+  },
+  "head_headphone": {
+    "w": 503,
+    "h": 512
+  },
+  "head_sakura_crown": {
+    "w": 512,
+    "h": 428
+  },
+  "head_sprout": {
+    "w": 512,
+    "h": 489
+  },
+  "mask_sleep": {
+    "w": 512,
+    "h": 297
+  },
+  "scarf": {
+    "w": 511,
+    "h": 512
+  },
+  "wings": {
+    "w": 512,
+    "h": 269
+  },
+  "wings_fairy": {
+    "w": 512,
+    "h": 326
+  }
+}
