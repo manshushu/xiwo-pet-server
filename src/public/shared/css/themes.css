@@ -11,3 +11,293 @@
 .skin-astro_cat { --species-accent: #9b72f2; --species-bg: #f3e8ff; }
 .skin-lucky_cat { --species-accent: #ffb300; --species-bg: #fef9c3; }
 .skin-sky_dragon { --species-accent: #ffd54f; --species-bg: #fffbeb; }
+
+/* ── 个性化名片边框样式（学生端与教师大屏共用） ───────────────── */
+.frame-default_wood {
+    border-color: #D6C7B2 !important;
+    border-bottom-color: #BFA88B !important;
+}
+.frame-sakura_bloom {
+    border: 2.5px solid #F472B6 !important;
+    border-bottom: 5px solid #DB2777 !important;
+    background: linear-gradient(180deg, #FFF5F8 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 4px 14px rgba(244, 114, 182, 0.22);
+}
+.frame-bamboo_jade {
+    border: 2.5px solid #34D399 !important;
+    border-bottom: 5px solid #059669 !important;
+    background: linear-gradient(180deg, #ECFDF5 0%, #FFFFFF 100%) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+}
+.frame-macaron_cream {
+    border: 2.5px solid #C084FC !important;
+    border-bottom: 5px solid #9333EA !important;
+    background: linear-gradient(180deg, #FDF4FF 0%, #FFFBEB 100%) !important;
+    box-shadow: 0 4px 14px rgba(192, 132, 252, 0.22);
+}
+.frame-cyber_neon {
+    border: 2.5px solid #22D3EE !important;
+    border-bottom: 5px solid #6366F1 !important;
+    background: linear-gradient(180deg, #0F172A 0%, #1E1B4B 100%) !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.35);
+}
+.frame-mecha_steel {
+    border: 2.5px solid #38BDF8 !important;
+    border-bottom: 5px solid #0284C7 !important;
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%) !important;
+    color: #F1F5F9 !important;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.28);
+}
+.frame-esports_rgb {
+    border: 2.5px solid #F43F5E !important;
+    border-bottom: 5px solid #2563EB !important;
+    background: linear-gradient(145deg, #18102D 0%, #0F172A 100%) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 0 16px rgba(244, 63, 94, 0.32), 0 0 10px rgba(37, 99, 235, 0.28);
+}
+.frame-royal_gold {
+    border: 2.5px solid #FBBF24 !important;
+    border-bottom: 5px solid #D97706 !important;
+    background: linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%) !important;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.32);
+}
+
+/* 暗底边框内文字反白适配 */
+.frame-cyber_neon .card-name,
+.frame-mecha_steel .card-name,
+.frame-esports_rgb .card-name,
+.frame-cyber_neon .plaza-card-name,
+.frame-mecha_steel .plaza-card-name,
+.frame-esports_rgb .plaza-card-name {
+    color: #F8FAFC !important;
+}
+.frame-cyber_neon .card-no,
+.frame-mecha_steel .card-no,
+.frame-esports_rgb .card-no,
+.frame-cyber_neon .card-coins,
+.frame-mecha_steel .card-coins,
+.frame-esports_rgb .card-coins {
+    color: #CBD5E1 !important;
+}
+
+/* ── 荣誉称号徽章样式 ──────────────────────────────────────── */
+.title-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+.title-badge.cozy {
+    background: #FFF1F2;
+    color: #BE185D;
+    border: 1px solid #FBCFE8;
+}
+.title-badge.cyber {
+    background: linear-gradient(90deg, #1E1B4B, #312E81);
+    color: #38BDF8;
+    border: 1px solid rgba(56, 189, 248, 0.55);
+}
+
+/* ── 段位徽章与分榜 Top 3 荣耀小标 ───────────────────────────── */
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.3;
+    white-space: nowrap;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.honor-ribbons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 3px;
+}
+
+.honor-ribbon {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.honor-ribbon.top-1 {
+    background: linear-gradient(90deg, #FEF08A, #FDE047);
+    color: #92400E;
+    border: 1px solid #F59E0B;
+}
+
+.honor-ribbon.top-2 {
+    background: linear-gradient(90deg, #F1F5F9, #E2E8F0);
+    color: #334155;
+    border: 1px solid #94A3B8;
+}
+
+.honor-ribbon.top-3 {
+    background: linear-gradient(90deg, #FFEDD5, #FED7AA);
+    color: #9A3412;
+    border: 1px solid #FB923C;
+}
+
+/* ── 多维荣耀排行榜共用样式 ──────────────────────────────────── */
+.lb-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #E2E8F0;
+    padding-bottom: 10px;
+}
+
+.lb-tab-btn {
+    background: #F8FAFC;
+    border: 2px solid #E2E8F0;
+    color: #475569;
+    padding: 7px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lb-tab-btn.active {
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    border-color: #D97706;
+    color: #FFFFFF;
+}
+
+.lb-desc-bar {
+    font-size: 12px;
+    color: #64748B;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lb-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lb-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 16px;
+    border: 2px solid #E2E8F0;
+    background: #FFFFFF;
+}
+
+.lb-row.lb-top-1 {
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.22);
+}
+
+.lb-rank-num {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 15px;
+    background: #F1F5F9;
+    color: #475569;
+    flex-shrink: 0;
+}
+
+.lb-top-1 .lb-rank-num {
+    background: linear-gradient(135deg, #FDE047, #F59E0B);
+    color: #78350F;
+}
+
+.lb-top-2 .lb-rank-num {
+    background: linear-gradient(135deg, #E2E8F0, #94A3B8);
+    color: #1E293B;
+}
+
+.lb-top-3 .lb-rank-num {
+    background: linear-gradient(135deg, #FED7AA, #EA580C);
+    color: #FFFFFF;
+}
+
+.lb-avatar-mini {
+    width: 56px;
+    height: 44px;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+}
+
+.lb-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.lb-name-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.lb-score-val {
+    font-size: 16px;
+    font-weight: 900;
+    color: #D97706;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.frame-cyber_neon .lb-score-val,
+.frame-mecha_steel .lb-score-val,
+.frame-esports_rgb .lb-score-val {
+    color: #38BDF8;
+}
+
+.lb-my-bar {
+    margin-top: 14px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #ECFDF5, #EFF6FF);
+    border: 2px solid #A7F3D0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}

@@ -77,6 +77,42 @@ class StudentApp {
         return (window.SKINS_CATALOG || []).find(s => s.id === skinId) || window.SKINS_CATALOG[0];
     }
 
+    getBackgroundConfig(bgId) {
+        if (!bgId) return null;
+        return (window.BACKGROUNDS_CATALOG || []).find(b => b.id === bgId) || null;
+    }
+
+    getFrameConfig(frameId) {
+        const list = window.FRAMES_CATALOG || [];
+        return list.find(f => f.id === frameId) || list[0] || { id: 'default_wood', name: '原木基础框', style: 'cozy', icon: '🪵' };
+    }
+
+    getTitleConfig(titleId) {
+        if (!titleId) return null;
+        return (window.TITLES_CATALOG || []).find(t => t.id === titleId) || null;
+    }
+
+    resolvePetScene(pet = {}) {
+        const skinCfg = this.getSkinConfig(pet.currentSkin || 'default_cat');
+        const customBg = this.getBackgroundConfig(pet.currentBackground);
+        if (customBg) {
+            return {
+                bgUrl: customBg.bgUrl,
+                sceneName: customBg.name,
+                icon: customBg.icon || '🏡',
+                isCustom: true,
+                bgId: customBg.id
+            };
+        }
+        return {
+            bgUrl: skinCfg.sceneBg,
+            sceneName: skinCfg.sceneName,
+            icon: '🏡',
+            isCustom: false,
+            bgId: null
+        };
+    }
+
     getSkinStageName(skinCfg, level = 1) {
         if (skinCfg && Array.isArray(skinCfg.stages) && skinCfg.stages.length >= 3) {
             const idx = level >= 7 ? 2 : (level >= 4 ? 1 : 0);
@@ -101,11 +137,44 @@ class StudentApp {
         const pet = this.student.pet || {};
         const level = pet.level !== undefined && pet.level !== null ? Number(pet.level) : 1;
         const currentSkinCfg = this.getSkinConfig(pet.currentSkin || 'default_cat');
+        const sceneInfo = this.resolvePetScene(pet);
         const stageName = level <= 0 ? '神秘宠物蛋' : this.getSkinStageName(currentSkinCfg, level);
 
         // 顶部个人信息与物种图标
         document.getElementById('user-display-name').textContent = this.student.displayName;
-        document.getElementById('user-sub-info').textContent = `学号: ${this.student.username} · ${stageName} (${currentSkinCfg.sceneName})`;
+        document.getElementById('user-sub-info').textContent = `学号: ${this.student.username} · ${stageName} (${sceneInfo.sceneName})`;
+        const titleEl = document.getElementById('user-title-badge');
+        const titleCfg = this.getTitleConfig(pet.currentTitle);
+        if (titleEl) {
+            if (titleCfg) {
+                titleEl.textContent = `${titleCfg.icon} ${titleCfg.name}`;
+                titleEl.className = `title-badge ${titleCfg.style || 'cozy'}`;
+                titleEl.style.display = 'inline-flex';
+            } else {
+                titleEl.style.display = 'none';
+            }
+        }
+        const rankEl = document.getElementById('user-rank-badge');
+        if (rankEl && this.student.rankInfo) {
+            const rk = this.student.rankInfo;
+            rankEl.textContent = `${rk.icon} ${rk.name}`;
+            rankEl.style.background = rk.bg || '#FEF3C7';
+            rankEl.style.color = rk.color || '#92400E';
+            rankEl.style.display = 'inline-flex';
+        }
+        const checkinBtn = document.getElementById('btn-daily-checkin');
+        if (checkinBtn) {
+            const checkedIn = Boolean(this.student.checkedInToday);
+            checkinBtn.disabled = checkedIn;
+            checkinBtn.textContent = checkedIn ? '✓ 今日已签到' : '📅 签到(+10💰)';
+        }
+        const lbBtn = document.getElementById('btn-action-leaderboard');
+        if (lbBtn) {
+            const visibleBoards = Array.isArray(this.config?.visibleBoards)
+                ? this.config.visibleBoards
+                : ['honor', 'darkhorse', 'collection', 'popularity'];
+            lbBtn.style.display = visibleBoards.length > 0 ? 'inline-flex' : 'none';
+        }
         const navIcon = document.getElementById('nav-species-icon');
         if (navIcon) navIcon.textContent = level <= 0 ? '🥚' : (currentSkinCfg.icon || '🐾');
 
@@ -149,16 +218,17 @@ class StudentApp {
         const pet = this.student.pet || {};
         const level = pet.level !== undefined && pet.level !== null ? Number(pet.level) : 1;
         const skinCfg = this.getSkinConfig(pet.currentSkin || 'default_cat');
+        const sceneInfo = this.resolvePetScene(pet);
         const stageName = level <= 0 ? '神秘宠物蛋' : this.getSkinStageName(skinCfg, level);
 
         // 切换专属庭院背景图
         const bgEl = document.getElementById('courtyard-bg');
-        if (bgEl && skinCfg.sceneBg) {
-            bgEl.style.backgroundImage = `url('${skinCfg.sceneBg}')`;
+        if (bgEl && sceneInfo.bgUrl) {
+            bgEl.style.backgroundImage = `url('${sceneInfo.bgUrl}')`;
         }
 
         const sceneTitle = document.getElementById('courtyard-scene-title');
-        if (sceneTitle) sceneTitle.textContent = `${skinCfg.sceneName} · ${stageName}`;
+        if (sceneTitle) sceneTitle.textContent = `${sceneInfo.sceneName} · ${stageName}`;
 
         document.getElementById('visit-banner-bar').style.display = 'none';
         document.getElementById('quick-pet-actions').style.display = 'flex';
@@ -181,16 +251,16 @@ class StudentApp {
         if (!this.visitingHost) return;
         const hostPet = this.visitingHost.pet || {};
         const myPet = this.student.pet || {};
-        const hostSkinCfg = this.getSkinConfig(hostPet.currentSkin || 'default_cat');
+        const hostScene = this.resolvePetScene(hostPet);
 
-        // 庭院切换为被拜访同学的物种主题场景
+        // 庭院切换为被拜访同学当前布置的庭院背景
         const bgEl = document.getElementById('courtyard-bg');
-        if (bgEl && hostSkinCfg.sceneBg) {
-            bgEl.style.backgroundImage = `url('${hostSkinCfg.sceneBg}')`;
+        if (bgEl && hostScene.bgUrl) {
+            bgEl.style.backgroundImage = `url('${hostScene.bgUrl}')`;
         }
 
         const sceneTitle = document.getElementById('courtyard-scene-title');
-        if (sceneTitle) sceneTitle.textContent = `${this.visitingHost.displayName} 的 ${hostSkinCfg.sceneName}`;
+        if (sceneTitle) sceneTitle.textContent = `${this.visitingHost.displayName} 的 ${hostScene.sceneName}`;
 
         document.getElementById('visit-banner-bar').style.display = 'flex';
         document.getElementById('visit-host-label').textContent = `🏡 串门中：${this.visitingHost.displayName}`;
@@ -341,6 +411,7 @@ class StudentApp {
         const btnTouch = document.getElementById('btn-action-touch');
         const btnFeed = document.getElementById('btn-action-feed');
         const btnCloset = document.getElementById('btn-action-closet');
+        const btnBg = document.getElementById('btn-action-bg');
         const btnEditor = document.getElementById('btn-action-editor');
         const btnPlaza = document.getElementById('btn-action-plaza');
         const btnExport = document.getElementById('btn-action-export');
@@ -352,6 +423,7 @@ class StudentApp {
             if (btnTouch) btnTouch.disabled = true;
             if (btnFeed) btnFeed.disabled = true;
             if (btnCloset) btnCloset.disabled = true;
+            if (btnBg) btnBg.disabled = true;
             if (btnEditor) btnEditor.disabled = true;
             if (btnPlaza) btnPlaza.disabled = true;
             if (btnExport) {
@@ -366,6 +438,7 @@ class StudentApp {
             if (btnTouch) btnTouch.disabled = false;
             if (btnFeed) btnFeed.disabled = false;
             if (btnCloset) btnCloset.disabled = false;
+            if (btnBg) btnBg.disabled = false;
             if (btnEditor) btnEditor.disabled = true;
             if (btnPlaza) btnPlaza.disabled = false;
             if (btnExport) {
@@ -380,6 +453,7 @@ class StudentApp {
             if (btnTouch) btnTouch.disabled = false;
             if (btnFeed) btnFeed.disabled = false;
             if (btnCloset) btnCloset.disabled = false;
+            if (btnBg) btnBg.disabled = false;
             if (btnEditor) btnEditor.disabled = true;
             if (btnPlaza) btnPlaza.disabled = false;
             if (btnExport) {
@@ -394,6 +468,7 @@ class StudentApp {
             if (btnTouch) btnTouch.disabled = false;
             if (btnFeed) btnFeed.disabled = false;
             if (btnCloset) btnCloset.disabled = false;
+            if (btnBg) btnBg.disabled = false;
             if (btnEditor) btnEditor.disabled = false;
             if (btnPlaza) btnPlaza.disabled = false;
             if (btnExport) {
@@ -408,6 +483,7 @@ class StudentApp {
             if (btnTouch) btnTouch.disabled = true;
             if (btnFeed) btnFeed.disabled = true;
             if (btnCloset) btnCloset.disabled = true;
+            if (btnBg) btnBg.disabled = true;
             if (btnEditor) btnEditor.disabled = true;
             if (btnPlaza) btnPlaza.disabled = false;
             if (btnExport) {
@@ -547,6 +623,37 @@ class StudentApp {
         if (type === 'force_logout') {
             alert('账号已被教师端暂停或下线');
             window.location.replace('/student/login.html');
+        }
+
+        if (type === 'leaderboard_config_update') {
+            if (Array.isArray(data?.visibleBoards)) {
+                if (!this.config) this.config = {};
+                this.config.visibleBoards = data.visibleBoards;
+                this.updateUi();
+            }
+            const lbModal = document.getElementById('modal-leaderboard');
+            if (lbModal && lbModal.classList.contains('active')) {
+                this.loadStudentLeaderboard(this.activeStudentLbBoard);
+            }
+        }
+    }
+
+    // ── 每日课堂签到（不受上课模式锁定限制） ───────────────────
+    async handleDailyCheckin() {
+        try {
+            const res = await fetch('/api/student/checkin', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                this.student = data.student;
+                this.updateUi();
+                this.playAudioReward();
+                this.triggerBubble('📅 每日签到成功！+10💰 +10成长值');
+                this.triggerPetJump();
+            } else {
+                alert(data.message || '今日已完成签到');
+            }
+        } catch (e) {
+            console.error('每日签到失败', e);
         }
     }
 
@@ -1081,6 +1188,298 @@ class StudentApp {
         }
     }
 
+    // ── 个性化装扮商店（庭院背景 / 名片边框 / 荣誉称号） ──────────
+    openBackgroundShop(filterStyle = null, category = null) {
+        if (category) {
+            this.shopCategory = category;
+        } else if (!this.shopCategory) {
+            this.shopCategory = 'bg';
+        }
+        if (filterStyle) {
+            this.bgShopFilter = filterStyle;
+        } else if (!this.bgShopFilter) {
+            this.bgShopFilter = 'all';
+        }
+        this.openModal('modal-bg-shop');
+        this.renderBackgroundShop();
+    }
+
+    switchShopCategory(category) {
+        this.shopCategory = category || 'bg';
+        this.renderBackgroundShop();
+    }
+
+    filterBackgroundShop(style) {
+        this.bgShopFilter = style || 'all';
+        this.renderBackgroundShop();
+    }
+
+    resetCurrentCategoryItem() {
+        const cat = this.shopCategory || 'bg';
+        if (cat === 'bg') return this.equipBackground('auto');
+        if (cat === 'frame') return this.equipCosmetic('frame', 'default_wood');
+        if (cat === 'title') return this.equipCosmetic('title', 'none');
+    }
+
+    renderBackgroundShop() {
+        const container = document.getElementById('bg-shop-container');
+        if (!container) return;
+
+        const pet = this.student.pet || {};
+        const coinsEl = document.getElementById('bg-modal-coins');
+        if (coinsEl) coinsEl.textContent = pet.coins || 0;
+
+        const cat = this.shopCategory || 'bg';
+        const myLevel = pet.level || 1;
+        const activeStyle = this.bgShopFilter || 'all';
+
+        document.querySelectorAll('#shop-cat-tabs .shop-cat-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.cat === cat);
+        });
+        document.querySelectorAll('#bg-filter-group .bg-filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.style === activeStyle);
+        });
+
+        const autoBtn = document.getElementById('btn-bg-reset-auto');
+        if (cat === 'bg') {
+            const currentBg = pet.currentBackground || null;
+            if (autoBtn) {
+                autoBtn.style.display = 'inline-flex';
+                autoBtn.disabled = !currentBg;
+                autoBtn.textContent = currentBg ? '🐾 恢复跟随物种默认' : '✓ 当前已跟随物种默认';
+            }
+            this._renderBgShopGrid(container, pet, myLevel, activeStyle);
+        } else if (cat === 'frame') {
+            const currentFrame = pet.currentFrame || 'default_wood';
+            if (autoBtn) {
+                autoBtn.style.display = 'inline-flex';
+                autoBtn.disabled = currentFrame === 'default_wood';
+                autoBtn.textContent = currentFrame === 'default_wood' ? '✓ 当前为原木基础框' : '🪵 恢复原木基础框';
+            }
+            this._renderFrameShopGrid(container, pet, myLevel, activeStyle);
+        } else {
+            const currentTitle = pet.currentTitle || null;
+            if (autoBtn) {
+                autoBtn.style.display = 'inline-flex';
+                autoBtn.disabled = !currentTitle;
+                autoBtn.textContent = currentTitle ? '🏷️ 卸下当前称号' : '✓ 当前未佩戴称号';
+            }
+            this._renderTitleShopGrid(container, pet, myLevel, activeStyle);
+        }
+    }
+
+    _renderBgShopGrid(container, pet, myLevel, activeStyle) {
+        const unlocked = Array.isArray(pet.unlockedBackgrounds) ? pet.unlockedBackgrounds : ['sunny_courtyard'];
+        const currentBg = pet.currentBackground || null;
+        const list = (window.BACKGROUNDS_CATALOG || []).filter(bg => activeStyle === 'all' || bg.style === activeStyle);
+
+        container.innerHTML = list.map(bg => {
+            const isUnlocked = bg.price === 0 || unlocked.includes(bg.id);
+            const isCurrent = currentBg === bg.id;
+            const reqLv = Number(bg.reqLevel) || 1;
+            const levelLocked = reqLv > 1 && reqLv > myLevel;
+            const [btnText, btnAction, disabledAttr] = isCurrent
+                ? ['✓ 使用中', '', 'disabled']
+                : isUnlocked
+                    ? ['换上背景', `window.studentApp.equipBackground('${bg.id}')`, '']
+                    : levelLocked
+                        ? [`🔒 Lv.${bg.reqLevel}`, '', 'disabled']
+                        : [`💰 ${bg.price}`, `window.studentApp.buyBackground('${bg.id}')`, ''];
+
+            return `
+                <div class="bg-shop-card ${isCurrent ? 'is-active' : ''}">
+                    <div class="bg-preview-thumb" style="background-image: url('${bg.bgUrl}');">
+                        <span class="bg-style-pill ${bg.style}">${bg.styleLabel}</span>
+                        ${bg.tag ? `<span class="bg-tag-pill">${bg.tag}</span>` : ''}
+                    </div>
+                    <div class="bg-card-body">
+                        <div class="bg-card-title">${bg.icon} ${bg.name}</div>
+                        <div class="bg-card-desc">${bg.desc}</div>
+                        <div class="bg-card-footer">
+                            <span style="font-size:11px; color:var(--ink-muted); font-weight:700;">
+                                ${isUnlocked ? '已拥有' : `需 Lv.${bg.reqLevel || 1}`}
+                            </span>
+                            <button class="btn-dock ${isUnlocked && !isCurrent ? 'highlight' : ''}" style="font-size:12px; padding:6px 14px;" ${disabledAttr} onclick="${btnAction}">
+                                ${btnText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    _renderFrameShopGrid(container, pet, myLevel, activeStyle) {
+        const unlocked = Array.isArray(pet.unlockedFrames) ? pet.unlockedFrames : ['default_wood'];
+        const current = pet.currentFrame || 'default_wood';
+        const list = (window.FRAMES_CATALOG || []).filter(f => activeStyle === 'all' || f.style === activeStyle);
+
+        container.innerHTML = list.map(f => {
+            const isUnlocked = f.price === 0 || unlocked.includes(f.id);
+            const isCurrent = current === f.id;
+            const reqLv = Number(f.reqLevel) || 1;
+            const levelLocked = reqLv > 1 && reqLv > myLevel;
+            const [btnText, btnAction, disabledAttr] = isCurrent
+                ? ['✓ 佩戴中', '', 'disabled']
+                : isUnlocked
+                    ? ['换上边框', `window.studentApp.equipCosmetic('frame', '${f.id}')`, '']
+                    : levelLocked
+                        ? [`🔒 Lv.${f.reqLevel}`, '', 'disabled']
+                        : [`💰 ${f.price}`, `window.studentApp.buyCosmetic('frame', '${f.id}')`, ''];
+
+            return `
+                <div class="bg-shop-card ${isCurrent ? 'is-active' : ''}">
+                    <div class="frame-preview-box frame-${f.id}">
+                        <span class="bg-style-pill ${f.style}">${f.styleLabel}</span>
+                        ${f.tag ? `<span class="bg-tag-pill">${f.tag}</span>` : ''}
+                        <div style="font-size:26px;">${f.icon}</div>
+                        <div class="card-name" style="font-size:12px; font-weight:800;">${this.student.displayName}</div>
+                    </div>
+                    <div class="bg-card-body">
+                        <div class="bg-card-title">${f.icon} ${f.name}</div>
+                        <div class="bg-card-desc">${f.desc}</div>
+                        <div class="bg-card-footer">
+                            <span style="font-size:11px; color:var(--ink-muted); font-weight:700;">
+                                ${isUnlocked ? '已拥有' : `需 Lv.${f.reqLevel || 1}`}
+                            </span>
+                            <button class="btn-dock ${isUnlocked && !isCurrent ? 'highlight' : ''}" style="font-size:12px; padding:6px 14px;" ${disabledAttr} onclick="${btnAction}">
+                                ${btnText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    _renderTitleShopGrid(container, pet, myLevel, activeStyle) {
+        const unlocked = Array.isArray(pet.unlockedTitles) ? pet.unlockedTitles : ['classroom_rookie'];
+        const current = pet.currentTitle || null;
+        const list = (window.TITLES_CATALOG || []).filter(t => activeStyle === 'all' || t.style === activeStyle);
+
+        container.innerHTML = list.map(t => {
+            const isUnlocked = t.price === 0 || unlocked.includes(t.id);
+            const isCurrent = current === t.id;
+            const reqLv = Number(t.reqLevel) || 1;
+            const levelLocked = reqLv > 1 && reqLv > myLevel;
+            const [btnText, btnAction, disabledAttr] = isCurrent
+                ? ['✓ 佩戴中', '', 'disabled']
+                : isUnlocked
+                    ? ['佩戴称号', `window.studentApp.equipCosmetic('title', '${t.id}')`, '']
+                    : levelLocked
+                        ? [`🔒 Lv.${t.reqLevel}`, '', 'disabled']
+                        : [`💰 ${t.price}`, `window.studentApp.buyCosmetic('title', '${t.id}')`, ''];
+
+            return `
+                <div class="bg-shop-card ${isCurrent ? 'is-active' : ''}">
+                    <div class="title-preview-box">
+                        <span class="bg-style-pill ${t.style}">${t.styleLabel}</span>
+                        <span class="title-badge ${t.style}" style="font-size:13px; padding:5px 14px;">${t.icon} ${t.name}</span>
+                    </div>
+                    <div class="bg-card-body">
+                        <div class="bg-card-title">${t.icon} ${t.name}</div>
+                        <div class="bg-card-desc">${t.desc}</div>
+                        <div class="bg-card-footer">
+                            <span style="font-size:11px; color:var(--ink-muted); font-weight:700;">
+                                ${isUnlocked ? '已拥有' : `需 Lv.${t.reqLevel || 1}`}
+                            </span>
+                            <button class="btn-dock ${isUnlocked && !isCurrent ? 'highlight' : ''}" style="font-size:12px; padding:6px 14px;" ${disabledAttr} onclick="${btnAction}">
+                                ${btnText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async equipCosmetic(type, itemId) {
+        try {
+            const res = await fetch(`/api/student/${type}/equip`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (type === 'frame') this.student.pet.currentFrame = data.currentFrame || null;
+                if (type === 'title') this.student.pet.currentTitle = data.currentTitle || null;
+                this.updateUi();
+                this.renderBackgroundShop();
+            } else {
+                alert(data.message);
+            }
+        } catch (e) {
+            console.error('切换个性化装扮失败', e);
+        }
+    }
+
+    async buyCosmetic(type, itemId) {
+        try {
+            const res = await fetch(`/api/student/${type}/buy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                this.student = data.student;
+                this.updateUi();
+                this.renderBackgroundShop();
+                this.playAudioReward();
+                alert('🎉 恭喜解锁并佩戴新个性化装扮！大屏与串门卡片已同步亮出！');
+            } else {
+                alert(data.message);
+            }
+        } catch (e) {
+            console.error('购买个性化装扮失败', e);
+        }
+    }
+
+    async equipBackground(bgId) {
+        try {
+            const res = await fetch('/api/student/background/equip', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bgId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                this.student.pet.currentBackground = data.currentBackground || null;
+                this.exitVisitMode();
+                this.updateUi();
+                this.renderBackgroundShop();
+            } else {
+                alert(data.message);
+            }
+        } catch (e) {
+            console.error('切换庭院背景失败', e);
+        }
+    }
+
+    async buyBackground(bgId) {
+        try {
+            const res = await fetch('/api/student/background/buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bgId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                this.student = data.student;
+                this.exitVisitMode();
+                this.updateUi();
+                this.renderBackgroundShop();
+                this.playAudioReward();
+                alert('🎉 恭喜解锁并换上新庭院背景！同学们来串门时也能看到哦！');
+            } else {
+                alert(data.message);
+            }
+        } catch (e) {
+            console.error('兑换庭院背景失败', e);
+        }
+    }
+
     // ── 装扮与五官捏脸工坊 ────────────────────────────────────
     openOutfitEditor() {
         if (this.permissions.currentMode !== 'outfit_create') {
@@ -1593,16 +1992,30 @@ class StudentApp {
                 if (c.id === this.student.id) return;
                 const pet = c.pet || {};
                 const skinCfg = this.getSkinConfig(pet.currentSkin || 'default_cat');
+                const sceneInfo = this.resolvePetScene(pet);
+                const frameId = pet.currentFrame || 'default_wood';
+                const titleCfg = this.getTitleConfig(pet.currentTitle);
+                const titleHtml = titleCfg
+                    ? `<span class="title-badge ${titleCfg.style || 'cozy'}">${titleCfg.icon} ${titleCfg.name}</span>`
+                    : '';
+                const rankHtml = c.rankInfo
+                    ? `<span class="rank-badge" style="background:${c.rankInfo.bg}; color:${c.rankInfo.color};">${c.rankInfo.icon} ${c.rankInfo.name}</span>`
+                    : '';
+                const ribbonsHtml = Array.isArray(c.honorBadges) && c.honorBadges.length > 0
+                    ? `<div class="honor-ribbons">${c.honorBadges.map(b => `<span class="honor-ribbon top-${b.rank}">${b.label}</span>`).join('')}</div>`
+                    : '';
                 html += `
-                    <div class="plaza-card">
-                        <div class="plaza-pet-box">
+                    <div class="plaza-card frame-${frameId}">
+                        <div class="plaza-pet-box" style="background-image: linear-gradient(rgba(255,255,255,0.16), rgba(255,255,255,0.16)), url('${sceneInfo.bgUrl}'); background-size: cover; background-position: center; border-radius: 14px;">
                             ${window.PetRenderer.renderSvg(pet.currentSkin, pet.accessories, pet.colorHue, 100, { level: pet.level || 1 })}
                         </div>
-                        <div style="font-weight:800; font-size:15px;">${c.displayName}</div>
+                        <div class="plaza-card-name" style="font-weight:800; font-size:15px;">${c.displayName}</div>
+                        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:4px;">${rankHtml}${titleHtml}</div>
+                        ${ribbonsHtml}
                         <div style="font-size:12px; color:var(--ink-sub);">
                             ${skinCfg.icon} ${skinCfg.name} · <strong>Lv.${pet.level || 1}</strong>
                         </div>
-                        <div style="font-size:11px; color:var(--ink-muted);">饱腹度: ${pet.fullness ?? 80}%</div>
+                        <div style="font-size:11px; color:var(--ink-muted);">${sceneInfo.icon} ${sceneInfo.sceneName} · 饱腹度 ${pet.fullness ?? 80}%</div>
                         <button class="btn-visit" style="margin-top:6px; width:100%;" onclick="window.studentApp.enterVisitMode(${c.id})">
                             🏡 去TA家小窝串门
                         </button>
@@ -1896,6 +2309,134 @@ class StudentApp {
                 osc.stop(ctx.currentTime + (idx + 1) * 0.08 + 0.1);
             });
         } catch (e) {}
+    }
+
+    // ── 多维荣耀排行榜（仅渲染教师开放榜单 + Top 10 + 个人排名） ────
+    openLeaderboardModal(boardId = null) {
+        this.openModal('modal-leaderboard');
+        const visible = Array.isArray(this.config?.visibleBoards)
+            ? this.config.visibleBoards
+            : ['honor', 'darkhorse', 'collection', 'popularity'];
+        const target = boardId || this.activeStudentLbBoard || visible[0] || 'honor';
+        this.loadStudentLeaderboard(target);
+    }
+
+    async loadStudentLeaderboard(boardId = 'honor') {
+        const tabsEl = document.getElementById('student-lb-tabs');
+        const descEl = document.getElementById('student-lb-desc');
+        const listEl = document.getElementById('student-lb-list');
+        const myBarEl = document.getElementById('student-lb-mybar');
+        if (!listEl) return;
+
+        listEl.innerHTML = '<div style="text-align:center; padding:26px; color:#64748b;">正在加载荣耀榜单...</div>';
+
+        try {
+            const res = await fetch(`/api/student/leaderboard?board=${encodeURIComponent(boardId)}`);
+            const data = await res.json();
+            if (!data.success) return;
+
+            if (data.closed || !Array.isArray(data.visibleBoards) || data.visibleBoards.length === 0) {
+                if (tabsEl) tabsEl.innerHTML = '';
+                if (descEl) descEl.innerHTML = '';
+                listEl.innerHTML = '<div style="text-align:center; padding:34px; color:#64748b;">老师暂未开放榜单展示</div>';
+                if (myBarEl) myBarEl.style.display = 'none';
+                return;
+            }
+
+            const activeId = data.board?.id || data.visibleBoards[0];
+            this.activeStudentLbBoard = activeId;
+            if (!this.config) this.config = {};
+            this.config.visibleBoards = data.visibleBoards;
+
+            const allTypes = window.LEADERBOARD_TYPES || [];
+            if (tabsEl) {
+                tabsEl.innerHTML = data.visibleBoards.map(id => {
+                    const meta = allTypes.find(t => t.id === id) || { id, name: id, icon: '🏆' };
+                    return `<button class="lb-tab-btn ${id === activeId ? 'active' : ''}" onclick="window.studentApp.loadStudentLeaderboard('${id}')">${meta.icon} ${meta.name}</button>`;
+                }).join('');
+            }
+
+            if (descEl && data.board) {
+                const extra = data.gradeInfo
+                    ? `<span>覆盖同年级 ${data.gradeInfo.classCount} 个班级</span>`
+                    : (activeId === 'darkhorse' ? `<span>当前冲刺周期：${data.currentPeriodKey}</span>` : '');
+                descEl.innerHTML = `<span>${data.board.icon} ${data.board.desc}</span>${extra}`;
+            }
+
+            const topList = Array.isArray(data.topList) ? data.topList : [];
+            if (topList.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;">暂无上榜数据</div>';
+            } else {
+                listEl.innerHTML = topList.map(row => {
+                    const pet = row.pet || {};
+                    const scene = this.resolvePetScene(pet);
+                    const frameId = pet.currentFrame || 'default_wood';
+                    const titleCfg = this.getTitleConfig(pet.currentTitle);
+                    const titleHtml = titleCfg
+                        ? `<span class="title-badge ${titleCfg.style || 'cozy'}">${titleCfg.icon} ${titleCfg.name}</span>`
+                        : '';
+                    const rankHtml = row.rankInfo
+                        ? `<span class="rank-badge" style="background:${row.rankInfo.bg}; color:${row.rankInfo.color};">${row.rankInfo.icon} ${row.rankInfo.name}</span>`
+                        : '';
+                    const ribbonsHtml = Array.isArray(row.honorBadges) && row.honorBadges.length > 0
+                        ? row.honorBadges.slice(0, 2).map(b => `<span class="honor-ribbon top-${b.rank}">${b.label}</span>`).join('')
+                        : '';
+                    const classTag = row.className ? `<span style="font-size:11px; color:#64748B;">[${row.className}]</span>` : '';
+                    const topClass = row.rank <= 3 ? `lb-top-${row.rank}` : '';
+
+                    return `
+                        <div class="lb-row frame-${frameId} ${topClass}">
+                            <div class="lb-rank-num">${row.rank <= 3 ? ['🥇', '🥈', '🥉'][row.rank - 1] : row.rank}</div>
+                            <div class="lb-avatar-mini" style="background-image: url('${scene.bgUrl}');">
+                                ${window.PetRenderer.renderSvg(pet.currentSkin, pet.accessories, pet.colorHue, 40, { level: pet.level || 1 })}
+                            </div>
+                            <div class="lb-info">
+                                <div class="lb-name-line">
+                                    <span class="card-name" style="max-width:none;">${row.displayName}</span>
+                                    ${classTag}
+                                    ${rankHtml}
+                                    ${titleHtml}
+                                </div>
+                                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
+                                    <span class="card-no" style="font-size:11px;">Lv.${pet.level || 0}</span>
+                                    ${ribbonsHtml}
+                                </div>
+                            </div>
+                            <div class="lb-score-val">${row.score}<div style="font-size:10px; font-weight:700; opacity:0.8;">${data.board?.unit || '分'}</div></div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            if (myBarEl) {
+                if (data.myRank) {
+                    const m = data.myRank;
+                    const gapText = m.rank === 1
+                        ? '🎉 当前你就是本榜第 1 名！继续保持！'
+                        : `距离第 ${m.rank - 1} 名还差 <strong>${m.gapToPrev}</strong> ${data.board?.unit || '分'}`;
+                    const tierText = m.nextRankInfo
+                        ? `距「${m.nextRankInfo.icon} ${m.nextRankInfo.name}」还差 <strong>${m.gapToNextTier}</strong> 荣耀值`
+                        : '👑 已达成最高段位「荣耀王者」！';
+                    myBarEl.style.display = 'flex';
+                    myBarEl.innerHTML = `
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <div style="font-weight:900; font-size:14px; color:#0F172A;">
+                                我的当前名次：第 <span style="color:#D97706; font-size:17px;">${m.rank}</span> 名（当前 ${m.score} ${data.board?.unit || '分'}）
+                            </div>
+                            <div style="font-size:12px; color:#475569;">${gapText} · ${tierText}</div>
+                        </div>
+                        <span class="rank-badge" style="background:${m.rankInfo.bg}; color:${m.rankInfo.color}; font-size:12px; padding:4px 12px;">
+                            ${m.rankInfo.icon} ${m.rankInfo.name}
+                        </span>
+                    `;
+                } else {
+                    myBarEl.style.display = 'none';
+                }
+            }
+        } catch (e) {
+            console.error('加载排行榜失败', e);
+            listEl.innerHTML = '<div style="text-align:center; padding:26px; color:#DC2626;">加载榜单失败</div>';
+        }
     }
 
     openModal(id) {

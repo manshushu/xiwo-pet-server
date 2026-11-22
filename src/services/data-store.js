@@ -60,8 +60,14 @@ function createDefaultPet() {
         fullness: 80,
         coins: 60,
         currentSkin: 'default_cat',
+        currentBackground: null,
+        currentFrame: 'default_wood',
+        currentTitle: 'classroom_rookie',
         currentOutfitId: null,
         unlockedSkins: ['default_cat'],
+        unlockedBackgrounds: ['sunny_courtyard'],
+        unlockedFrames: ['default_wood'],
+        unlockedTitles: ['classroom_rookie'],
         unlockedAccessories: [],
         hasChosenStarter: false,
         drawChances: 3,
@@ -71,7 +77,13 @@ function createDefaultPet() {
         accessories: [],
         colorHue: 0,
         lastTouchTime: 0,
-        lastFeedTime: 0
+        lastFeedTime: 0,
+        totalEarnedScore: 0,
+        periodScore: 0,
+        periodKey: '',
+        popularity: 0,
+        lastCheckinDate: '',
+        lastHighfiveRewardDate: ''
     };
 }
 
@@ -89,6 +101,8 @@ let configCache = {
     port: 3000,
     className: '七年级(1)班',
     adoptionMode: 'choose', // 'choose' | 'draw'
+    visibleBoards: ['honor', 'darkhorse', 'collection', 'popularity'],
+    darkhorsePeriodKey: null,
     teacherPasswordHash: '', // 默认 teacher123
     defaultStudentPassword: '123',
     aiReview: {
@@ -137,6 +151,12 @@ class DataStore {
         }
         if (!configCache.adoptionMode) {
             configCache.adoptionMode = 'choose';
+        }
+        if (!Array.isArray(configCache.visibleBoards)) {
+            configCache.visibleBoards = ['honor', 'darkhorse', 'collection', 'popularity'];
+        }
+        if (configCache.darkhorsePeriodKey === undefined) {
+            configCache.darkhorsePeriodKey = null;
         }
         if (!configCache.teacherPasswordHash) {
             configCache.teacherPasswordHash = bcrypt.hashSync('teacher123', 8);
@@ -282,6 +302,45 @@ class DataStore {
 
     getAllSafeStudents() {
         return studentsCache.map(s => this.getSafeStudent(s));
+    }
+
+    getSameGradeClassStudents() {
+        const curClassName = String(configCache.className || '');
+        const gradeMatch = curClassName.match(/^([一二三四五六七八九十高初\d]+年级|高[一二三]|初[一二三])/);
+        const gradeName = gradeMatch ? gradeMatch[1] : curClassName;
+        const currentKey = normalizeClassKey(curClassName);
+
+        const combined = studentsCache.map(s => ({
+            ...this.getSafeStudent(s),
+            className: curClassName
+        }));
+        let classCount = 1;
+
+        if (fs.existsSync(CLASSES_DIR)) {
+            const files = fs.readdirSync(CLASSES_DIR).filter(f => f.endsWith('.json'));
+            for (const file of files) {
+                try {
+                    const parsed = JSON.parse(fs.readFileSync(path.join(CLASSES_DIR, file), 'utf-8'));
+                    const cName = parsed.className || path.basename(file, '.json');
+                    if (normalizeClassKey(cName) === currentKey) continue;
+                    const cMatch = String(cName).match(/^([一二三四五六七八九十高初\d]+年级|高[一二三]|初[一二三])/);
+                    const cGrade = cMatch ? cMatch[1] : '';
+                    if (gradeName && cGrade === gradeName && Array.isArray(parsed.students)) {
+                        classCount += 1;
+                        parsed.students.forEach(st => {
+                            combined.push({
+                                ...this.getSafeStudent(st),
+                                className: cName
+                            });
+                        });
+                    }
+                } catch (e) {
+                    console.error(`[DataStore] 读取同年级班级 ${file} 失败`, e);
+                }
+            }
+        }
+
+        return { gradeName, classCount, students: combined };
     }
 
     getStudentById(id) {

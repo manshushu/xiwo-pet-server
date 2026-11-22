@@ -3,8 +3,9 @@ const router = express.Router();
 const dataStore = require('../services/data-store');
 const broadcaster = require('../ws/broadcaster');
 const { studentActionCooldownMiddleware } = require('../services/action-limiter');
-const { addPetExpWithEvolution, broadcastPetLevelUpIfNeeded } = require('../services/score-helper');
-const { SKINS_CATALOG, ACCESSORIES_CATALOG, FOODS_CATALOG } = require('../public/shared/js/skins-catalog');
+const { recordPeriodGrowth, addPetExpWithEvolution, broadcastPetLevelUpIfNeeded } = require('../services/score-helper');
+const { getCurrentPeriodKey, computeStudentMetrics, computeClassHonorBadges, buildLeaderboard } = require('../services/ranking-helper');
+const { SKINS_CATALOG, ACCESSORIES_CATALOG, FOODS_CATALOG, BACKGROUNDS_CATALOG, FRAMES_CATALOG, TITLES_CATALOG } = require('../public/shared/js/skins-catalog');
 
 const DAILY_HIGHFIVE_EXP_LIMIT = 5;
 
@@ -27,6 +28,18 @@ const OFFICIAL_ACCESSORIES = Object.fromEntries(
 
 const OFFICIAL_FOODS = Object.fromEntries(
     FOODS_CATALOG.map(f => [f.id, { name: f.name, cost: f.cost, fullnessBoost: f.fullnessBoost, expBoost: f.expBoost }])
+);
+
+const OFFICIAL_BACKGROUNDS = Object.fromEntries(
+    BACKGROUNDS_CATALOG.map(b => [b.id, { name: b.name, price: Number(b.price) || 0, reqLevel: b.reqLevel || 1 }])
+);
+
+const OFFICIAL_FRAMES = Object.fromEntries(
+    FRAMES_CATALOG.map(f => [f.id, { name: f.name, price: Number(f.price) || 0, reqLevel: f.reqLevel || 1 }])
+);
+
+const OFFICIAL_TITLES = Object.fromEntries(
+    TITLES_CATALOG.map(t => [t.id, { name: t.name, price: Number(t.price) || 0, reqLevel: t.reqLevel || 1 }])
 );
 
 // 学生鉴权中间件（增加账号冻结即时拦截与安全注入）
@@ -59,6 +72,18 @@ function requireStudent(req, res, next) {
 router.use(requireStudent);
 router.use(studentActionCooldownMiddleware(2000));
 
+function attachStudentHonors(safeStudent, badgeMap, periodKey) {
+    if (!safeStudent) return safeStudent;
+    const metrics = computeStudentMetrics(safeStudent, periodKey);
+    return {
+        ...safeStudent,
+        rankInfo: metrics.rank,
+        nextRankInfo: metrics.nextRank,
+        honorScore: metrics.honorScore,
+        honorBadges: badgeMap ? (badgeMap.get(safeStudent.id) || []) : []
+    };
+}
+
 // 获取本人数据（脱敏下发，杜绝泄露密码哈希）
 router.get('/me', (req, res) => {
     const studentId = req.session.studentId;
@@ -71,27 +96,122 @@ router.get('/me', (req, res) => {
     }
     const permissions = dataStore.getPermissions();
     const cfg = dataStore.getConfig();
+    const periodKey = getCurrentPeriodKey(cfg);
+    const badgeMap = computeClassHonorBadges(dataStore.getAllSafeStudents(), periodKey);
+    const enriched = attachStudentHonors(safeStudent, badgeMap, periodKey);
+    enriched.checkedInToday = safeStudent.pet?.lastCheckinDate === getTodayKey();
+
     res.json({
         success: true,
-        student: safeStudent,
+        student: enriched,
         permissions,
         config: {
             className: cfg.className || '班级',
-            adoptionMode: cfg.adoptionMode || 'choose'
+            adoptionMode: cfg.adoptionMode || 'choose',
+            visibleBoards: Array.isArray(cfg.visibleBoards) ? cfg.visibleBoards : ['honor', 'darkhorse', 'collection', 'popularity']
         }
     });
 });
 
 // 获取全班同学宠物列表（供串门社交与邻里街展示，已脱敏）
 router.get('/classmates', (req, res) => {
-    const allSafe = dataStore.getAllSafeStudents().map(s => ({
-        id: s.id,
-        username: s.username,
-        displayName: s.displayName,
-        status: s.status,
-        pet: s.pet
-    }));
-    res.json({ success: true, classmates: allSafe });
+    const cfg = dataStore.getConfig();
+    const periodKey = getCurrentPeriodKey(cfg);
+    const allSafe = dataStore.getAllSafeStudents();
+    const badgeMap = computeClassHonorBadges(allSafe, periodKey);
+    const list = allSafe.map(s => {
+        const enriched = attachStudentHonors(s, badgeMap, periodKey);
+        return {
+            id: enriched.id,
+            username: enriched.username,
+            displayName: enriched.displayName,
+            status: enriched.status,
+            rankInfo: enriched.rankInfo,
+            honorBadges: enriched.honorBadges,
+            pet: enriched.pet
+        };
+    });
+    res.json({ success: true, classmates: list });
+});
+
+// 每日课堂签到（不受上课锁定限制，固定 +10 币、+10 经验、+10 成长分）
+router.post('/checkin', (req, res) => {
+    const studentId = req.session.studentId;
+    const student = dataStore.getStudentById(studentId);
+    if (!student) return res.status(404).json({ success: false, message: '学生未找到' });
+
+    const today = getTodayKey();
+    if (student.pet?.lastCheckinDate === today) {
+        return res.status(400).json({ success: false, message: '今天已经签过到啦，明天再来领奖励吧！' });
+    }
+
+    const cfg = dataStore.getConfig();
+    const periodKey = getCurrentPeriodKey(cfg);
+    let evoResult = null;
+
+    const updated = dataStore.updateStudent(studentId, s => {
+        s.pet.lastCheckinDate = today;
+        s.pet.coins = (s.pet.coins || 0) + 10;
+        s.pet.isCracked = false;
+        recordPeriodGrowth(s.pet, 10, periodKey);
+        if ((Number(s.pet.level) || 0) < 10) {
+            evoResult = addPetExpWithEvolution(s.pet, 10);
+        }
+    });
+
+    broadcastPetLevelUpIfNeeded(updated, evoResult);
+    dataStore.addLog('daily_checkin', `每日课堂签到领取奖励 (+10币, +10经验)`, updated.id, updated.displayName, updated.displayName);
+    broadcaster.broadcastScoreUpdate(updated, '每日签到', 10, 0);
+
+    const badgeMap = computeClassHonorBadges(dataStore.getAllSafeStudents(), periodKey);
+    const enriched = attachStudentHonors(dataStore.getSafeStudentById(studentId), badgeMap, periodKey);
+    enriched.checkedInToday = true;
+
+    res.json({
+        success: true,
+        message: '📅 签到成功！获得 +10 课堂币、+10 成长值！',
+        leveledUp: Boolean(evoResult?.leveledUp),
+        student: enriched
+    });
+});
+
+// 学生端查看多维荣耀排行榜（仅显示教师开放的榜单与 Top 10 + 个人排名）
+router.get('/leaderboard', (req, res) => {
+    const studentId = req.session.studentId;
+    const cfg = dataStore.getConfig();
+    const visibleBoards = Array.isArray(cfg.visibleBoards) ? cfg.visibleBoards : ['honor', 'darkhorse', 'collection', 'popularity'];
+
+    if (visibleBoards.length === 0) {
+        return res.json({
+            success: true,
+            closed: true,
+            visibleBoards: [],
+            topList: [],
+            myRank: null
+        });
+    }
+
+    const reqBoard = typeof req.query.board === 'string' ? req.query.board : visibleBoards[0];
+    const activeBoard = visibleBoards.includes(reqBoard) ? reqBoard : visibleBoards[0];
+    const periodKey = getCurrentPeriodKey(cfg);
+    const students = dataStore.getAllSafeStudents();
+    const gradeData = activeBoard === 'grade' ? dataStore.getSameGradeClassStudents() : null;
+
+    const result = buildLeaderboard({
+        board: activeBoard,
+        students,
+        currentPeriodKey: periodKey,
+        selfStudentId: studentId,
+        selfClassName: cfg.className,
+        gradeData
+    });
+
+    res.json({
+        success: true,
+        closed: false,
+        visibleBoards,
+        ...result
+    });
 });
 
 // 抚摸互动（支持摸头/挠肚皮/拍拍等部位互动）
@@ -214,13 +334,17 @@ router.post('/visit-interact', (req, res) => {
 
         let visitorEvo = null;
         let hostEvo = null;
+        const periodKey = getCurrentPeriodKey(dataStore.getConfig());
         dataStore.updateStudent(visitor.id, v => {
             v.pet.coins -= giftCost;
+            recordPeriodGrowth(v.pet, 5, periodKey);
             visitorEvo = addPetExpWithEvolution(v.pet, 5);
         });
 
         dataStore.updateStudent(host.id, h => {
             h.pet.fullness = Math.min(100, (h.pet.fullness || 80) + 10);
+            h.pet.popularity = (Number(h.pet.popularity) || 0) + 3;
+            recordPeriodGrowth(h.pet, 5, periodKey);
             hostEvo = addPetExpWithEvolution(h.pet, 8);
         });
 
@@ -266,6 +390,8 @@ router.post('/visit-interact', (req, res) => {
         let visitorEvo = null;
         let hostEvo = null;
         let nextCount = currentCount;
+        let gotFirstCoinBonus = false;
+        const periodKey = getCurrentPeriodKey(dataStore.getConfig());
 
         dataStore.updateStudent(visitor.id, v => {
             if (v.pet.dailyHighfiveDate !== today) {
@@ -283,20 +409,30 @@ router.post('/visit-interact', (req, res) => {
                 nextCount = v.pet.dailyHighfiveCount;
                 visitorEvo = addPetExpWithEvolution(v.pet, 3);
             }
+
+            if (v.pet.lastHighfiveRewardDate !== today) {
+                v.pet.lastHighfiveRewardDate = today;
+                v.pet.coins = (v.pet.coins || 0) + 5;
+                recordPeriodGrowth(v.pet, 5, periodKey);
+                gotFirstCoinBonus = true;
+            }
         });
 
         if (canGainExp) {
             dataStore.updateStudent(host.id, h => {
+                h.pet.popularity = (Number(h.pet.popularity) || 0) + 1;
                 hostEvo = addPetExpWithEvolution(h.pet, 3);
             });
             broadcastPetLevelUpIfNeeded(visitor, visitorEvo);
             broadcastPetLevelUpIfNeeded(host, hostEvo);
-            broadcaster.broadcastScoreUpdate(visitor, `与${host.displayName}贴贴`, 0, 0);
+            broadcaster.broadcastScoreUpdate(visitor, `与${host.displayName}贴贴`, gotFirstCoinBonus ? 5 : 0, 0);
             broadcaster.broadcastScoreUpdate(host, `与${visitor.displayName}贴贴`, 0, 0);
+        } else if (gotFirstCoinBonus) {
+            broadcaster.broadcastScoreUpdate(visitor, `今日首次串门贴贴`, 5, 0);
         }
 
         const logDesc = canGainExp
-            ? `带着宠物去 ${host.displayName} 的小窝贴贴击掌（双方经验+3）`
+            ? `带着宠物去 ${host.displayName} 的小窝贴贴击掌（双方经验+3${gotFirstCoinBonus ? '，每日首访+5币' : ''}）`
             : `带着宠物去 ${host.displayName} 的小窝贴贴击掌（今日经验已达上限，仅互动）`;
         dataStore.addLog('visit_highfive', logDesc, visitor.id, visitor.displayName, visitor.displayName);
         broadcaster.broadcastAll('praise_bullet', {
@@ -311,7 +447,7 @@ router.post('/visit-interact', (req, res) => {
             customText: `🐾 ${visitor.displayName} 带着宠物来你家小窝贴贴击掌啦！`
         });
 
-        let msg = `🤝 贴贴击掌成功！双方经验+3（今日贴贴获经验 ${nextCount}/${DAILY_HIGHFIVE_EXP_LIMIT}）`;
+        let msg = `🤝 贴贴击掌成功！双方经验+3${gotFirstCoinBonus ? '，每日首次串门额外奖励 +5💰' : ''}（今日贴贴获经验 ${nextCount}/${DAILY_HIGHFIVE_EXP_LIMIT}）`;
         if (!canGainExp) {
             msg = reachedDailyCap
                 ? `🤝 贴贴互动成功！今日贴贴获经验次数已满（${DAILY_HIGHFIVE_EXP_LIMIT}/${DAILY_HIGHFIVE_EXP_LIMIT}），本次不加经验`
@@ -406,6 +542,208 @@ router.post('/skin/buy', (req, res) => {
     broadcaster.broadcastScoreUpdate(student, '兑换形象', -officialPrice, 0);
 
     res.json({ success: true, student: dataStore.getSafeStudentById(studentId) });
+});
+
+// 切换已解锁庭院背景（支持 'auto' 或 null 恢复跟随当前物种默认背景）
+router.post('/background/equip', (req, res) => {
+    const studentId = req.session.studentId;
+    const permissions = dataStore.getPermissions();
+
+    if (permissions.currentMode === 'class' || permissions.currentMode === 'dismissed') {
+        return res.status(403).json({ success: false, message: '当前课堂模式下禁止更换庭院背景' });
+    }
+
+    const { bgId } = req.body;
+    const student = dataStore.getStudentById(studentId);
+    if (!student) return res.status(404).json({ success: false, message: '学生未找到' });
+
+    if (!bgId || bgId === 'auto') {
+        dataStore.updateStudent(studentId, s => {
+            s.pet.currentBackground = null;
+        });
+        broadcaster.broadcastClassState();
+        return res.json({ success: true, currentBackground: null });
+    }
+
+    if (typeof bgId !== 'string' || !OFFICIAL_BACKGROUNDS[bgId]) {
+        return res.status(400).json({ success: false, message: '商城中不存在该庭院背景' });
+    }
+
+    const bgConfig = OFFICIAL_BACKGROUNDS[bgId];
+    const unlocked = Array.isArray(student.pet.unlockedBackgrounds) ? student.pet.unlockedBackgrounds : ['sunny_courtyard'];
+    if (bgConfig.price > 0 && !unlocked.includes(bgId)) {
+        return res.status(400).json({ success: false, message: '尚未解锁此款庭院背景' });
+    }
+
+    dataStore.updateStudent(studentId, s => {
+        if (!Array.isArray(s.pet.unlockedBackgrounds)) {
+            s.pet.unlockedBackgrounds = ['sunny_courtyard'];
+        }
+        if (bgConfig.price === 0 && !s.pet.unlockedBackgrounds.includes(bgId)) {
+            s.pet.unlockedBackgrounds.push(bgId);
+        }
+        s.pet.currentBackground = bgId;
+    });
+
+    broadcaster.broadcastClassState();
+    res.json({ success: true, currentBackground: bgId });
+});
+
+// 购买新庭院背景（由服务端查表决定价格和等级条件）
+router.post('/background/buy', (req, res) => {
+    const studentId = req.session.studentId;
+    const permissions = dataStore.getPermissions();
+
+    if (permissions.currentMode === 'class' || permissions.currentMode === 'dismissed') {
+        return res.status(403).json({ success: false, message: '当前课堂模式下禁止兑换庭院背景' });
+    }
+
+    const { bgId } = req.body;
+    if (!bgId || typeof bgId !== 'string') {
+        return res.status(400).json({ success: false, message: '背景ID参数不正确' });
+    }
+
+    const bgConfig = OFFICIAL_BACKGROUNDS[bgId];
+    if (!bgConfig) {
+        return res.status(400).json({ success: false, message: '商城中不存在该庭院背景' });
+    }
+
+    const student = dataStore.getStudentById(studentId);
+    if (!student) return res.status(404).json({ success: false, message: '学生未找到' });
+
+    const unlocked = Array.isArray(student.pet.unlockedBackgrounds) ? student.pet.unlockedBackgrounds : ['sunny_courtyard'];
+    if (unlocked.includes(bgId)) {
+        return res.status(400).json({ success: false, message: '已拥有该庭院背景，无需重复兑换' });
+    }
+
+    const reqLv = Number(bgConfig.reqLevel) || 1;
+    if (reqLv > 1 && student.pet.level < reqLv) {
+        return res.status(400).json({ success: false, message: `该背景需要达到 Lv.${reqLv} 才能兑换！` });
+    }
+
+    const officialPrice = bgConfig.price;
+    if (student.pet.coins < officialPrice) {
+        return res.status(400).json({ success: false, message: '课堂币不足以兑换此庭院背景' });
+    }
+
+    dataStore.updateStudent(studentId, s => {
+        if (!Array.isArray(s.pet.unlockedBackgrounds)) {
+            s.pet.unlockedBackgrounds = ['sunny_courtyard'];
+        }
+        s.pet.coins -= officialPrice;
+        s.pet.unlockedBackgrounds.push(bgId);
+        s.pet.currentBackground = bgId;
+    });
+
+    dataStore.addLog('bg_buy', `兑换并装扮了庭院背景「${bgConfig.name}」，消耗 ${officialPrice} 课堂币`, student.id, student.displayName, student.displayName);
+    broadcaster.broadcastScoreUpdate(student, '兑换背景', -officialPrice, 0);
+
+    res.json({ success: true, student: dataStore.getSafeStudentById(studentId) });
+});
+
+// 统一注册名片边框与称号的购买/佩戴接口
+function registerCosmeticRoutes({ routePrefix, catalogMap, currentField, unlockedField, defaultId, label, logType }) {
+    router.post(`/${routePrefix}/equip`, (req, res) => {
+        const studentId = req.session.studentId;
+        const permissions = dataStore.getPermissions();
+        if (permissions.currentMode === 'class' || permissions.currentMode === 'dismissed') {
+            return res.status(403).json({ success: false, message: `当前课堂模式下禁止更换${label}` });
+        }
+
+        const itemId = req.body?.itemId;
+        const student = dataStore.getStudentById(studentId);
+        if (!student) return res.status(404).json({ success: false, message: '学生未找到' });
+
+        if (!itemId || itemId === 'none') {
+            dataStore.updateStudent(studentId, s => {
+                s.pet[currentField] = null;
+            });
+            broadcaster.broadcastClassState();
+            return res.json({ success: true, [currentField]: null });
+        }
+
+        if (typeof itemId !== 'string' || !catalogMap[itemId]) {
+            return res.status(400).json({ success: false, message: `商城中不存在该${label}` });
+        }
+
+        const cfg = catalogMap[itemId];
+        const unlocked = Array.isArray(student.pet[unlockedField]) ? student.pet[unlockedField] : [defaultId];
+        if (cfg.price > 0 && !unlocked.includes(itemId)) {
+            return res.status(400).json({ success: false, message: `尚未解锁该${label}` });
+        }
+
+        dataStore.updateStudent(studentId, s => {
+            if (!Array.isArray(s.pet[unlockedField])) s.pet[unlockedField] = [defaultId];
+            if (cfg.price === 0 && !s.pet[unlockedField].includes(itemId)) s.pet[unlockedField].push(itemId);
+            s.pet[currentField] = itemId;
+        });
+
+        broadcaster.broadcastClassState();
+        res.json({ success: true, [currentField]: itemId });
+    });
+
+    router.post(`/${routePrefix}/buy`, (req, res) => {
+        const studentId = req.session.studentId;
+        const permissions = dataStore.getPermissions();
+        if (permissions.currentMode === 'class' || permissions.currentMode === 'dismissed') {
+            return res.status(403).json({ success: false, message: `当前课堂模式下禁止兑换${label}` });
+        }
+
+        const itemId = req.body?.itemId;
+        if (!itemId || typeof itemId !== 'string' || !catalogMap[itemId]) {
+            return res.status(400).json({ success: false, message: `商城中不存在该${label}` });
+        }
+
+        const cfg = catalogMap[itemId];
+        const student = dataStore.getStudentById(studentId);
+        if (!student) return res.status(404).json({ success: false, message: '学生未找到' });
+
+        const unlocked = Array.isArray(student.pet[unlockedField]) ? student.pet[unlockedField] : [defaultId];
+        if (unlocked.includes(itemId) || cfg.price === 0) {
+            return res.status(400).json({ success: false, message: `已拥有该${label}，无需重复兑换` });
+        }
+
+        const reqLv = Number(cfg.reqLevel) || 1;
+        if (reqLv > 1 && student.pet.level < reqLv) {
+            return res.status(400).json({ success: false, message: `该${label}需要达到 Lv.${reqLv} 才能兑换！` });
+        }
+
+        if (student.pet.coins < cfg.price) {
+            return res.status(400).json({ success: false, message: `课堂币不足以兑换该${label}` });
+        }
+
+        dataStore.updateStudent(studentId, s => {
+            if (!Array.isArray(s.pet[unlockedField])) s.pet[unlockedField] = [defaultId];
+            s.pet.coins -= cfg.price;
+            s.pet[unlockedField].push(itemId);
+            s.pet[currentField] = itemId;
+        });
+
+        dataStore.addLog(logType, `兑换并佩戴了${label}「${cfg.name}」，消耗 ${cfg.price} 课堂币`, student.id, student.displayName, student.displayName);
+        broadcaster.broadcastScoreUpdate(student, `兑换${label}`, -cfg.price, 0);
+
+        res.json({ success: true, student: dataStore.getSafeStudentById(studentId) });
+    });
+}
+
+registerCosmeticRoutes({
+    routePrefix: 'frame',
+    catalogMap: OFFICIAL_FRAMES,
+    currentField: 'currentFrame',
+    unlockedField: 'unlockedFrames',
+    defaultId: 'default_wood',
+    label: '名片边框',
+    logType: 'frame_buy'
+});
+
+registerCosmeticRoutes({
+    routePrefix: 'title',
+    catalogMap: OFFICIAL_TITLES,
+    currentField: 'currentTitle',
+    unlockedField: 'unlockedTitles',
+    defaultId: 'classroom_rookie',
+    label: '荣誉称号',
+    logType: 'title_buy'
 });
 
 // 初次登录领养御三家首发伙伴（仅允许领取一次，不受上课模式锁定限制）

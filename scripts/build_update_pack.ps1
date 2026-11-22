@@ -43,12 +43,9 @@ foreach ($sub in @('src', 'scripts', 'node_modules')) {
 }
 
 $rootFiles = @(
-    'package.json', 'package-lock.json', 'index.html', 'VERSION',
-    '电子宠物入口.html', '教师大屏入口.html', '查看与管理后台服务.bat',
-    '一键安装并启动保活服务.bat', '一键启动电子宠物积分系统.exe',
-    '一键升级部署.bat', '一键升级部署.exe',
-    '打开学生端.bat', '打开教师大屏.bat', '启动v2新版.bat', '停止服务.bat',
-    'start_silent.vbs', 'start_console.bat', '使用说明.txt'
+    'package.json', 'package-lock.json', 'VERSION',
+    '电子宠物入口.html', '教师大屏入口.html',
+    '电子宠物控制台.exe', '一键升级部署.exe', '使用说明.txt'
 )
 foreach ($rf in $rootFiles) {
     $srcFile = Join-Path $RootDir $rf
@@ -68,7 +65,7 @@ Compress-Archive -Path "$PackDir\*" -DestinationPath $ZipPath -CompressionLevel 
 Write-Host "✔ 升级包目录已生成: $PackDir" -ForegroundColor Green
 Write-Host "✔ 升级包压缩包已生成: $ZipPath" -ForegroundColor Green
 Write-Host ''
-Write-Host '使用方法: 复制压缩包到目标电脑并解压到原目录旁（或任意位置），双击“一键升级部署.exe”或“一键升级部署.bat”即可自动寻址合并程序文件，原有 data 数据 100% 不变。' -ForegroundColor Yellow
+Write-Host '使用方法: 复制压缩包到目标电脑并解压到原目录旁（或任意位置），双击“一键升级部署.exe”即可自动寻址合并程序文件，原有 data 数据 100% 不变。' -ForegroundColor Yellow
 
 if (-not $NoPause) {
     Write-Host ''

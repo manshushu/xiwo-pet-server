@@ -105,7 +105,7 @@ router.post('/homework-reward', (req, res) => {
         rewarded: true,
         username,
         displayName: student.displayName,
-        coinsDelta: coinsReward,
+        coinsDelta: result?.coinsDelta ?? coinsReward,
         leveledUp: Boolean(result?.leveledUp),
         pet: result?.student?.pet || null
     });

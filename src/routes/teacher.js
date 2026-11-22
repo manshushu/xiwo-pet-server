@@ -5,6 +5,22 @@ const dataStore = require('../services/data-store');
 const broadcaster = require('../ws/broadcaster');
 const wsServer = require('../ws/ws-server');
 const { applyStudentScoreChange } = require('../services/score-helper');
+const { getCurrentPeriodKey, computeStudentMetrics, computeClassHonorBadges, buildLeaderboard } = require('../services/ranking-helper');
+const { LEADERBOARD_TYPES } = require('../public/shared/js/skins-catalog');
+
+function enrichStudentsWithHonors(safeStudents, cfg) {
+    const periodKey = getCurrentPeriodKey(cfg);
+    const badgeMap = computeClassHonorBadges(safeStudents, periodKey);
+    return safeStudents.map(s => {
+        const metrics = computeStudentMetrics(s, periodKey);
+        return {
+            ...s,
+            rankInfo: metrics.rank,
+            honorScore: metrics.honorScore,
+            honorBadges: badgeMap.get(s.id) || []
+        };
+    });
+}
 
 // 教师鉴权中间件
 function requireTeacher(req, res, next) {
@@ -25,11 +41,13 @@ router.use(requireTeacher);
 
 // 获取所有学生全量数据（脱敏下发，杜绝泄露密码哈希）
 router.get('/students', (req, res) => {
+    const cfg = dataStore.getConfig();
+    const students = enrichStudentsWithHonors(dataStore.getAllSafeStudents(), cfg);
     res.json({
         success: true,
-        students: dataStore.getAllSafeStudents(),
+        students,
         permissions: dataStore.getPermissions(),
-        config: dataStore.getConfig()
+        config: cfg
     });
 });
 
@@ -53,11 +71,12 @@ router.post('/switch-class', (req, res) => {
         return res.status(400).json({ success: false, message: '切换班级失败' });
     }
     broadcaster.broadcastClassState();
+    const cfg = dataStore.getConfig();
     res.json({
         success: true,
         ...result,
-        students: dataStore.getAllSafeStudents(),
-        config: dataStore.getConfig()
+        students: enrichStudentsWithHonors(dataStore.getAllSafeStudents(), cfg),
+        config: cfg
     });
 });
 
@@ -124,7 +143,84 @@ router.post('/random-pick', (req, res) => {
         displayName: chosen.displayName
     });
 
-    res.json({ success: true, student: chosen });
+    const cfg = dataStore.getConfig();
+    const enrichedList = enrichStudentsWithHonors(dataStore.getAllSafeStudents(), cfg);
+    const enrichedChosen = enrichedList.find(s => s.id === chosen.id) || dataStore.getSafeStudent(chosen);
+
+    res.json({ success: true, student: enrichedChosen });
+});
+
+// 一键全班基础分（直接给全班未冻结学生发放固定课堂币与经验，无需先全选）
+router.post('/class-bonus', (req, res) => {
+    const coins = Math.max(1, Math.min(50, Number(req.body?.coins) || 10));
+    const reason = typeof req.body?.reason === 'string' && req.body.reason.trim()
+        ? req.body.reason.trim()
+        : '全班守纪与专注基础奖励';
+
+    const activeStudents = dataStore.getAllStudents().filter(s => s.status === 'active');
+    let count = 0;
+    activeStudents.forEach(st => {
+        const r = applyStudentScoreChange(st.id, {
+            rawCoinsDelta: coins,
+            fullnessDelta: 2,
+            reason,
+            logType: 'class_bonus',
+            operator: '教师'
+        });
+        if (r) count += 1;
+    });
+
+    broadcaster.broadcastClassState();
+    res.json({ success: true, count, coins });
+});
+
+// 教师端查看多维荣耀排行榜（开放全部 5 大分榜，支持投屏结算）
+router.get('/leaderboard', (req, res) => {
+    const cfg = dataStore.getConfig();
+    const validIds = LEADERBOARD_TYPES.map(b => b.id);
+    const reqBoard = typeof req.query.board === 'string' ? req.query.board : 'honor';
+    const activeBoard = validIds.includes(reqBoard) ? reqBoard : 'honor';
+    const periodKey = getCurrentPeriodKey(cfg);
+    const students = dataStore.getAllSafeStudents();
+    const gradeData = activeBoard === 'grade' ? dataStore.getSameGradeClassStudents() : null;
+
+    const result = buildLeaderboard({
+        board: activeBoard,
+        students,
+        currentPeriodKey: periodKey,
+        selfClassName: cfg.className,
+        gradeData
+    });
+
+    res.json({
+        success: true,
+        visibleBoards: Array.isArray(cfg.visibleBoards) ? cfg.visibleBoards : ['honor', 'darkhorse', 'collection', 'popularity'],
+        darkhorsePeriodKey: cfg.darkhorsePeriodKey || null,
+        ...result
+    });
+});
+
+// 教师控制学生端可见榜单范围
+router.post('/leaderboard/settings', (req, res) => {
+    const validIds = LEADERBOARD_TYPES.map(b => b.id);
+    const incoming = Array.isArray(req.body?.visibleBoards) ? req.body.visibleBoards : [];
+    const filtered = validIds.filter(id => incoming.includes(id));
+
+    const updated = dataStore.updateConfig({ visibleBoards: filtered });
+    dataStore.addLog('leaderboard_settings', `更新学生可见榜单配置：${filtered.length > 0 ? filtered.join(', ') : '全部隐藏'}`, null, null, '教师');
+    broadcaster.broadcastAll('leaderboard_config_update', { visibleBoards: filtered });
+
+    res.json({ success: true, visibleBoards: updated.visibleBoards });
+});
+
+// 教师手动重置黑马进步榜（开启新课堂或新周期冲刺）
+router.post('/leaderboard/reset-darkhorse', (req, res) => {
+    const newKey = `custom_${Date.now()}`;
+    dataStore.updateConfig({ darkhorsePeriodKey: newKey });
+    dataStore.addLog('darkhorse_reset', `教师开启了新一轮黑马进步榜冲刺 (${newKey})`, null, null, '教师');
+    broadcaster.broadcastAll('leaderboard_config_update', { darkhorsePeriodKey: newKey });
+
+    res.json({ success: true, darkhorsePeriodKey: newKey });
 });
 
 // 重置学生密码

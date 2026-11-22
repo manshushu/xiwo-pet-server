@@ -264,6 +264,8 @@ body {
     border-bottom-color: var(--primary-lip);
     background: #ECFDF5;
     box-shadow: 0 0 0 3px rgba(52, 179, 126, 0.25);
+    outline: 3px solid #10B981;
+    outline-offset: 2px;
 }
 
 .student-card.frozen {
@@ -308,15 +310,27 @@ body {
 
 /* 手办橱窗微舞台 */
 .card-stage {
-    width: 92px;
-    height: 92px;
+    width: 100%;
+    height: 86px;
     position: relative;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
+    padding-bottom: 4px;
     background: var(--species-bg, #FFFBEB);
-    border-radius: 50%;
-    border: 2px dashed rgba(213, 203, 182, 0.6);
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.65);
+    overflow: hidden;
+}
+
+.card-title-row {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 5px;
+    min-height: 18px;
 }
 
 .stage-shadow {
@@ -577,15 +591,19 @@ body {
 }
 
 .random-pet-box {
-    width: 168px;
-    height: 168px;
-    margin: 0 auto 16px auto;
+    width: 280px;
+    height: 164px;
+    margin: 0 auto 14px auto;
     background: #FFFFFF;
-    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border-radius: 20px;
     border: 4px solid #FDE68A;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
+    padding-bottom: 8px;
+    overflow: hidden;
     box-shadow: 0 10px 24px rgba(245, 158, 11, 0.15);
 }
 

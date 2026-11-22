@@ -32,6 +32,12 @@
 
         <!-- 教师专属功能组 -->
         <div class="tool-group">
+            <button class="btn-tool" onclick="window.teacherApp.openTeacherLeaderboard()">
+                <span>🏆</span> 荣耀榜单
+            </button>
+            <button class="btn-tool" onclick="window.teacherApp.giveClassBonus(10)">
+                <span>🌟</span> 全班基础分
+            </button>
             <button class="btn-tool" onclick="window.teacherApp.openRandomPicker()">
                 <span>🎲</span> 随机提问
             </button>
@@ -72,10 +78,10 @@
     <!-- 选中学生时浮现的批量打分悬浮工具栏 -->
     <div class="floating-bar" id="floating-scoring-bar">
         <span class="selected-count" id="selected-students-count">已选 0 人</span>
-        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(1, 0, '积极发言')">+1 发言积极</button>
-        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(2, 5, '小组互助')">+2 小组互助</button>
-        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(5, 10, '卓越表现')">+5 精彩表现</button>
-        <button class="score-btn btn-minus" onclick="window.teacherApp.applyBatchScore(-1, 0, '纪律提醒')">-1 纪律提醒</button>
+        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(1, 0, '积极发言')">+1 发言(+5💰)</button>
+        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(2, 5, '小组互助')">+2 互助(+10💰)</button>
+        <button class="score-btn btn-plus" onclick="window.teacherApp.applyBatchScore(5, 10, '卓越表现')">+5 卓越(+25💰)</button>
+        <button class="score-btn btn-minus" onclick="window.teacherApp.applyBatchScore(-1, 0, '纪律提醒')">-1 提醒(-5💰)</button>
         <button class="score-btn" onclick="window.teacherApp.selectAllStudents()">全选</button>
         <button class="score-btn" onclick="window.teacherApp.clearSelection()">取消</button>
     </div>
@@ -103,10 +109,11 @@
             <div class="modal-body random-stage">
                 <div class="random-pet-box" id="random-pet-stage"></div>
                 <div class="random-name" id="random-student-name">抽取中...</div>
+                <div id="random-student-title" style="margin-bottom:8px; min-height:22px;"></div>
                 <div style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">请这位同学回答本堂核心问题</div>
                 <div style="display:flex; justify-content:center; gap:10px;">
                     <button class="score-btn btn-plus" id="btn-reward-random" onclick="window.teacherApp.rewardRandomPick(2)">
-                        🌟 回答正确 +2分
+                        🌟 回答正确 +2分(+10💰)
                     </button>
                     <button class="score-btn" onclick="window.teacherApp.startRandomRoll()">
                         🔄 重新抽取
@@ -220,6 +227,28 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-tool" onclick="window.teacherApp.saveSettings()">保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 7: 荣耀榜单与下课结算视图 -->
+    <div class="modal-overlay" id="modal-teacher-leaderboard" onclick="if(event.target===this) window.teacherApp.closeModal('modal-teacher-leaderboard')">
+        <div class="modal-window" style="max-width: 860px;">
+            <div class="modal-header">
+                <span class="modal-title">🏆 班级荣耀榜单 · 课堂结算视图</span>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn-tool" style="background:#FFFBEB; color:#B45309; border-color:#FDE68A;" onclick="window.teacherApp.resetDarkhorseBoard()">🔄 重置黑马榜</button>
+                    <button class="modal-close" onclick="window.teacherApp.closeModal('modal-teacher-leaderboard')">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" style="max-height: 76vh; overflow-y: auto;">
+                <div class="lb-tabs" id="teacher-lb-tabs"></div>
+                <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:10px 14px; margin-bottom:12px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:12px;">
+                    <span style="font-weight:800; color:#334155;">👁️ 学生端可见榜单开关：</span>
+                    <div id="teacher-lb-visibility-controls" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+                </div>
+                <div class="lb-desc-bar" id="teacher-lb-desc"></div>
+                <div class="lb-list" id="teacher-lb-list"></div>
             </div>
         </div>
     </div>

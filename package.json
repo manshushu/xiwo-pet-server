@@ -1,6 +1,6 @@
 {
   "name": "xiwo-pet-server",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "description": "西沃智慧宠物局域网双端交互系统（教师机管控台与学生端）",
   "main": "src/server.js",
   "bin": "src/server.js",

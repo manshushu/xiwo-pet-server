@@ -1,4 +1,5 @@
 const dataStore = require('../services/data-store');
+const { getCurrentPeriodKey, computeStudentMetrics, computeClassHonorBadges } = require('../services/ranking-helper');
 
 class Broadcaster {
     constructor() {
@@ -54,13 +55,23 @@ class Broadcaster {
 
     // 全量班级状态更新
     broadcastClassState() {
-        const students = dataStore.getAllStudents().map(s => ({
-            id: s.id,
-            username: s.username,
-            displayName: s.displayName,
-            status: s.status,
-            pet: s.pet
-        }));
+        const cfg = dataStore.getConfig();
+        const periodKey = getCurrentPeriodKey(cfg);
+        const safeStudents = dataStore.getAllSafeStudents();
+        const badgeMap = computeClassHonorBadges(safeStudents, periodKey);
+        const students = safeStudents.map(s => {
+            const metrics = computeStudentMetrics(s, periodKey);
+            return {
+                id: s.id,
+                username: s.username,
+                displayName: s.displayName,
+                status: s.status,
+                rankInfo: metrics.rank,
+                honorScore: metrics.honorScore,
+                honorBadges: badgeMap.get(s.id) || [],
+                pet: s.pet
+            };
+        });
         const permissions = dataStore.getPermissions();
         this.broadcastAll('class_state', { students, permissions });
     }

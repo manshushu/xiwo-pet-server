@@ -14,7 +14,11 @@
         <div class="profile-section">
             <div class="avatar-badge" id="nav-species-icon">🐾</div>
             <div class="student-name-box">
-                <span class="student-display-name" id="user-display-name">01号 张晨</span>
+                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
+                    <span class="student-display-name" id="user-display-name">01号 张晨</span>
+                    <span class="rank-badge" id="user-rank-badge" style="display:none;"></span>
+                    <span class="title-badge cozy" id="user-title-badge" style="display:none;"></span>
+                </div>
                 <span class="student-sub-info" id="user-sub-info">学号: s01 · 阳光木屋庭院</span>
             </div>
         </div>
@@ -39,6 +43,7 @@
         </div>
 
         <div class="nav-actions">
+            <button class="btn-nav" id="btn-daily-checkin" onclick="window.studentApp.handleDailyCheckin()">📅 签到(+10💰)</button>
             <button class="btn-nav" onclick="window.studentApp.openModal('modal-rules')">📖 积分规则</button>
             <button class="btn-nav" onclick="window.studentApp.openLogsModal()">📜 足迹</button>
             <button class="btn-nav" onclick="window.studentApp.openPasswordModal()">🔑 密码</button>
@@ -116,11 +121,17 @@
             <button class="btn-dock" id="btn-action-closet" onclick="window.studentApp.openSkinCloset()">
                 <span>🦊</span> 物种
             </button>
+            <button class="btn-dock" id="btn-action-bg" onclick="window.studentApp.openBackgroundShop()">
+                <span>🎨</span> 个性化
+            </button>
             <button class="btn-dock highlight" id="btn-action-dex" onclick="window.studentApp.openDexModal()">
                 <span>🏆</span> 图鉴
             </button>
             <button class="btn-dock social-btn" id="btn-action-plaza" onclick="window.studentApp.openPlaza('neighbors')">
                 <span>🏘️</span> 串门
+            </button>
+            <button class="btn-dock highlight" id="btn-action-leaderboard" onclick="window.studentApp.openLeaderboardModal()">
+                <span>👑</span> 排行榜
             </button>
             <button class="btn-dock highlight" id="btn-action-next-round" style="display:none;" onclick="window.studentApp.startNextRound()">
                 <span>🥚</span> 领养新宠
@@ -248,6 +259,35 @@
         </div>
     </div>
 
+    <!-- 弹窗 3.5: 个性化装扮商店（庭院背景 / 名片边框 / 荣誉称号） -->
+    <div class="modal-overlay" id="modal-bg-shop">
+        <div class="modal-box" style="max-width: 920px;">
+            <div class="modal-header">
+                <span class="modal-title">🎨 个性化装扮商店</span>
+                <span class="food-coins-now" style="margin-left:auto; margin-right:12px;"><strong id="bg-modal-coins">60</strong> 💰</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-bg-shop')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="shop-cat-tabs" id="shop-cat-tabs">
+                    <button class="shop-cat-tab active" data-cat="bg" onclick="window.studentApp.switchShopCategory('bg')">🏡 庭院背景</button>
+                    <button class="shop-cat-tab" data-cat="frame" onclick="window.studentApp.switchShopCategory('frame')">🖼️ 名片边框</button>
+                    <button class="shop-cat-tab" data-cat="title" onclick="window.studentApp.switchShopCategory('title')">🏷️ 荣誉称号</button>
+                </div>
+                <div class="bg-shop-toolbar">
+                    <div class="bg-filter-group" id="bg-filter-group">
+                        <button class="bg-filter-btn active" data-style="all" onclick="window.studentApp.filterBackgroundShop('all')">全部风格</button>
+                        <button class="bg-filter-btn" data-style="cozy" onclick="window.studentApp.filterBackgroundShop('cozy')">🌸 暖萌森友</button>
+                        <button class="bg-filter-btn" data-style="cyber" onclick="window.studentApp.filterBackgroundShop('cyber')">⚡ 酷炫电竞</button>
+                    </div>
+                    <button class="bg-auto-btn" id="btn-bg-reset-auto" onclick="window.studentApp.resetCurrentCategoryItem()">
+                        🐾 恢复跟随物种默认
+                    </button>
+                </div>
+                <div class="bg-shop-grid" id="bg-shop-container"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- 弹窗 4: 修改密码 -->
     <div class="modal-overlay" id="modal-password">
         <div class="modal-box" style="max-width: 420px;">
@@ -365,6 +405,22 @@
             </div>
             <div class="modal-body" style="padding: 12px; text-align: center;">
                 <img src="/shared/assets/score_rules_poster.png" alt="课堂作业与宠物积分规则图" style="width: 100%; height: auto; border-radius: 12px; display: block;">
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗 10: 班级荣耀排行榜 -->
+    <div class="modal-overlay" id="modal-leaderboard" onclick="if(event.target===this) window.studentApp.closeModal('modal-leaderboard')">
+        <div class="modal-box" style="max-width: 780px;">
+            <div class="modal-header">
+                <span class="modal-title">👑 宠物荣耀排行榜</span>
+                <button class="modal-close" onclick="window.studentApp.closeModal('modal-leaderboard')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="lb-tabs" id="student-lb-tabs"></div>
+                <div class="lb-desc-bar" id="student-lb-desc"></div>
+                <div class="lb-list" id="student-lb-list"></div>
+                <div class="lb-my-bar" id="student-lb-mybar" style="display:none;"></div>
             </div>
         </div>
     </div>

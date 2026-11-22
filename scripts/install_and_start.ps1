@@ -73,7 +73,7 @@ if (Test-IsAdmin) {
     $startedByTask = $true
     Write-Host "  ✔ 已注册计划任务 ($TaskName)：开机自启 + 每分钟巡检 + HTTP 假死重启" -ForegroundColor Green
 } else {
-    Write-Host '  【提示】当前非管理员权限，仅以后台进程启动。如需开机自启，请右键“以管理员身份运行”或双击“一键启动电子宠物积分系统.exe”。' -ForegroundColor Yellow
+    Write-Host '  【提示】当前非管理员权限，仅以后台进程启动。如需开机自启，请右键“以管理员身份运行”或双击“电子宠物控制台.exe”。' -ForegroundColor Yellow
     Start-Process -FilePath 'cmd.exe' -ArgumentList "/c `"$RunBat`"" -WorkingDirectory (Split-Path -Parent $RunBat) -WindowStyle Hidden
 }
 

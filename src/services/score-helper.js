@@ -1,5 +1,20 @@
 const dataStore = require('./data-store');
 const broadcaster = require('../ws/broadcaster');
+const { getCurrentPeriodKey } = require('./ranking-helper');
+
+const SCORE_TO_COIN_RATE = 5;
+
+function recordPeriodGrowth(pet, growthDelta, periodKey) {
+    if (!pet) return;
+    const delta = Number(growthDelta) || 0;
+    if (delta <= 0) return;
+    pet.totalEarnedScore = (Number(pet.totalEarnedScore) || 0) + delta;
+    if (pet.periodKey !== periodKey) {
+        pet.periodKey = periodKey;
+        pet.periodScore = 0;
+    }
+    pet.periodScore = (Number(pet.periodScore) || 0) + delta;
+}
 
 function getEvolutionStage(level) {
     const lv = Number(level) || 0;
@@ -82,29 +97,44 @@ function broadcastPetLevelUpIfNeeded(student, evoResult) {
  */
 function applyStudentScoreChange(studentId, {
     coinsDelta = 0,
+    rawCoinsDelta = null,
     fullnessDelta = 0,
     reason = '课堂表现优异',
     logType = null,
-    operator = '教师'
+    operator = '教师',
+    applyMultiplier = true
 } = {}) {
-    const cDelta = Number(coinsDelta) || 0;
+    const isRawMode = rawCoinsDelta !== null && rawCoinsDelta !== undefined;
+    const basePoints = Number(coinsDelta) || 0;
+    const actualCoins = isRawMode
+        ? (Number(rawCoinsDelta) || 0)
+        : (applyMultiplier ? basePoints * SCORE_TO_COIN_RATE : basePoints);
+    const expGain = isRawMode
+        ? Math.max(0, actualCoins * 2)
+        : Math.max(0, basePoints * 10);
+    const growthGain = actualCoins > 0 ? actualCoins : 0;
     const fDelta = Number(fullnessDelta) || 0;
+    const currentPeriodKey = getCurrentPeriodKey(dataStore.getConfig());
     let evoResult = null;
 
     const student = dataStore.updateStudent(studentId, s => {
         const oldLevel = Number(s.pet.level) || 0;
-        const rawCoins = (s.pet.coins || 0) + cDelta;
-        if (cDelta < 0 && rawCoins < 0 && oldLevel === 0) {
+        const rawCoins = (s.pet.coins || 0) + actualCoins;
+        if (actualCoins < 0 && rawCoins < 0 && oldLevel === 0) {
             s.pet.isCracked = true;
-        } else if (cDelta > 0) {
+        } else if (actualCoins > 0) {
             s.pet.isCracked = false;
         }
 
         s.pet.coins = Math.max(0, rawCoins);
         s.pet.fullness = Math.min(100, Math.max(0, (s.pet.fullness || 0) + fDelta));
 
-        if (cDelta > 0 && oldLevel < 10) {
-            evoResult = addPetExpWithEvolution(s.pet, cDelta * 10);
+        if (growthGain > 0) {
+            recordPeriodGrowth(s.pet, growthGain, currentPeriodKey);
+        }
+
+        if (expGain > 0 && oldLevel < 10) {
+            evoResult = addPetExpWithEvolution(s.pet, expGain);
         }
     });
 
@@ -112,20 +142,25 @@ function applyStudentScoreChange(studentId, {
 
     broadcastPetLevelUpIfNeeded(student, evoResult);
 
-    const resolvedLogType = logType || (cDelta >= 0 ? 'score_add' : 'score_deduct');
+    const resolvedLogType = logType || (actualCoins >= 0 ? 'score_add' : 'score_deduct');
+    const scoreDesc = (!isRawMode && applyMultiplier && basePoints !== 0)
+        ? `${basePoints > 0 ? '+' : ''}${basePoints}分 / ${actualCoins >= 0 ? '+' : ''}${actualCoins}币`
+        : `${actualCoins >= 0 ? '+' : ''}${actualCoins}币`;
     dataStore.addLog(
         resolvedLogType,
-        `${reason} (${cDelta >= 0 ? '+' : ''}${cDelta}币, ${fDelta >= 0 ? '+' : ''}${fDelta}%饱腹)`,
+        `${reason} (${scoreDesc}, ${fDelta >= 0 ? '+' : ''}${fDelta}%饱腹)`,
         student.id,
         student.displayName,
         operator
     );
-    broadcaster.broadcastScoreUpdate(student, reason, cDelta, fDelta);
+    broadcaster.broadcastScoreUpdate(student, reason, actualCoins, fDelta);
 
-    return { student, leveledUp: Boolean(evoResult?.leveledUp) };
+    return { student, coinsDelta: actualCoins, leveledUp: Boolean(evoResult?.leveledUp) };
 }
 
 module.exports = {
+    SCORE_TO_COIN_RATE,
+    recordPeriodGrowth,
     applyStudentScoreChange,
     getEvolutionStage,
     addPetExpWithEvolution,

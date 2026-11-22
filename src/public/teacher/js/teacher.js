@@ -232,6 +232,24 @@ class TeacherApp {
     }
 
     // ── 网格渲染与交互 ──────────────────────────────────────────
+    resolvePetScene(pet = {}) {
+        const skinCfg = (window.SKINS_CATALOG || []).find(s => s.id === (pet.currentSkin || 'default_cat'))
+            || (window.SKINS_CATALOG || [])[0]
+            || { sceneBg: '/shared/assets/scenes/sunny_courtyard.png', sceneName: '阳光木屋庭院' };
+        const customBg = pet.currentBackground
+            ? (window.BACKGROUNDS_CATALOG || []).find(b => b.id === pet.currentBackground)
+            : null;
+        if (customBg) {
+            return { bgUrl: customBg.bgUrl, sceneName: customBg.name };
+        }
+        return { bgUrl: skinCfg.sceneBg, sceneName: skinCfg.sceneName };
+    }
+
+    getTitleConfig(titleId) {
+        if (!titleId) return null;
+        return (window.TITLES_CATALOG || []).find(t => t.id === titleId) || null;
+    }
+
     renderGrid() {
         const container = document.getElementById('students-grid-container');
         if (!container) return;
@@ -244,6 +262,18 @@ class TeacherApp {
             const skinId = pet.currentSkin || 'default_cat';
             const accessories = pet.accessories || [];
             const colorHue = pet.colorHue || 0;
+            const frameId = pet.currentFrame || 'default_wood';
+            const sceneInfo = this.resolvePetScene(pet);
+            const titleCfg = this.getTitleConfig(pet.currentTitle);
+            const titleHtml = titleCfg
+                ? `<span class="title-badge ${titleCfg.style || 'cozy'}">${titleCfg.icon} ${titleCfg.name}</span>`
+                : '';
+            const rankHtml = student.rankInfo
+                ? `<span class="rank-badge" style="background:${student.rankInfo.bg}; color:${student.rankInfo.color};">${student.rankInfo.icon} ${student.rankInfo.name}</span>`
+                : '';
+            const ribbonsHtml = Array.isArray(student.honorBadges) && student.honorBadges.length > 0
+                ? `<div class="honor-ribbons">${student.honorBadges.slice(0, 2).map(b => `<span class="honor-ribbon top-${b.rank}">${b.label}</span>`).join('')}</div>`
+                : '';
 
             let fullnessColor = '#10b981';
             if (pet.fullness < 25) fullnessColor = '#ef4444';
@@ -251,7 +281,7 @@ class TeacherApp {
 
             const lv = pet.level !== undefined && pet.level !== null ? Number(pet.level) : 1;
             html += `
-                <div class="student-card ${isSelected ? 'selected' : ''} ${isFrozen ? 'frozen' : ''}"
+                <div class="student-card frame-${frameId} ${isSelected ? 'selected' : ''} ${isFrozen ? 'frozen' : ''}"
                      id="student-card-${student.id}"
                      onclick="window.teacherApp.toggleSelectStudent(${student.id}, event)"
                      ondblclick="window.teacherApp.openSingleStudentModal(${student.id}, event)">
@@ -261,11 +291,16 @@ class TeacherApp {
                         <span class="card-lvl">Lv.${lv}</span>
                     </div>
 
-                    <div class="card-stage skin-${skinId}" id="pet-stage-${student.id}">
+                    <div class="card-stage skin-${skinId}" id="pet-stage-${student.id}" style="background-image: url('${sceneInfo.bgUrl}');" title="${sceneInfo.sceneName}">
                         <div class="stage-shadow"></div>
                         <div class="pet-rig">
-                            ${window.PetRenderer.renderSvg(skinId, [], colorHue, 86, { level: lv, isCracked: Boolean(pet.isCracked) })}
+                            ${window.PetRenderer.renderSvg(skinId, accessories, colorHue, 74, { level: lv, isCracked: Boolean(pet.isCracked) })}
                         </div>
+                    </div>
+
+                    <div class="card-title-row" style="flex-direction:column; align-items:center; gap:3px;">
+                        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:3px;">${rankHtml}${titleHtml}</div>
+                        ${ribbonsHtml}
                     </div>
 
                     <div class="card-bottom">
@@ -512,17 +547,51 @@ class TeacherApp {
         this.startRandomRoll();
     }
 
-    startRandomRoll() {
+    renderRandomStage(student, size = 135, isFinal = false) {
         const nameEl = document.getElementById('random-student-name');
+        const titleEl = document.getElementById('random-student-title');
         const petStage = document.getElementById('random-pet-stage');
+        const pet = student.pet || {};
+        const sceneInfo = this.resolvePetScene(pet);
+        const frameId = pet.currentFrame || 'default_wood';
+        const titleCfg = this.getTitleConfig(pet.currentTitle);
+
+        if (nameEl) {
+            nameEl.textContent = isFinal ? `🎯 ${student.displayName}` : student.displayName;
+        }
+        if (titleEl) {
+            const rankHtml = student.rankInfo
+                ? `<span class="rank-badge" style="background:${student.rankInfo.bg}; color:${student.rankInfo.color}; font-size:12px; padding:3px 10px;">${student.rankInfo.icon} ${student.rankInfo.name}</span>`
+                : '';
+            const titleHtml = titleCfg
+                ? `<span class="title-badge ${titleCfg.style || 'cozy'}" style="font-size:12px; padding:3px 12px;">${titleCfg.icon} ${titleCfg.name}</span>`
+                : '';
+            const ribbonsHtml = Array.isArray(student.honorBadges) && student.honorBadges.length > 0
+                ? `<div class="honor-ribbons" style="margin-top:4px;">${student.honorBadges.map(b => `<span class="honor-ribbon top-${b.rank}">${b.label}</span>`).join('')}</div>`
+                : '';
+            titleEl.innerHTML = `<div style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px;">${rankHtml}${titleHtml}</div>${ribbonsHtml}`;
+        }
+        if (petStage) {
+            petStage.className = `random-pet-box frame-${frameId}`;
+            petStage.style.backgroundImage = `url('${sceneInfo.bgUrl}')`;
+            petStage.innerHTML = window.PetRenderer.renderSvg(
+                pet.currentSkin || 'default_cat',
+                pet.accessories || [],
+                pet.colorHue || 0,
+                size,
+                { level: pet.level || 1, isCracked: Boolean(pet.isCracked) }
+            );
+        }
+    }
+
+    startRandomRoll() {
         const activeList = this.students.filter(s => s.status === 'active');
         if (activeList.length === 0) return;
 
         let rolls = 0;
         const interval = setInterval(() => {
             const temp = activeList[Math.floor(Math.random() * activeList.length)];
-            nameEl.textContent = temp.displayName;
-            petStage.innerHTML = window.PetRenderer.renderSvg(temp.pet?.currentSkin, temp.pet?.accessories, temp.pet?.colorHue, 140, { level: temp.pet?.level || 1 });
+            this.renderRandomStage(temp, 128, false);
             rolls++;
             if (rolls > 15) {
                 clearInterval(interval);
@@ -537,16 +606,7 @@ class TeacherApp {
             const data = await res.json();
             if (data.success) {
                 this.randomSelectedStudent = data.student;
-                const nameEl = document.getElementById('random-student-name');
-                const petStage = document.getElementById('random-pet-stage');
-                nameEl.textContent = `🎯 ${data.student.displayName}`;
-                petStage.innerHTML = window.PetRenderer.renderSvg(
-                    data.student.pet?.currentSkin,
-                    data.student.pet?.accessories,
-                    data.student.pet?.colorHue,
-                    150,
-                    { level: data.student.pet?.level || 1 }
-                );
+                this.renderRandomStage(data.student, 138, true);
             }
         } catch (e) {
             console.error('随机抽取失败', e);
@@ -823,6 +883,163 @@ class TeacherApp {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    async giveClassBonus(coins = 10) {
+        if (!confirm(`确定为全班活跃学生发放「+${coins} 课堂币」的基础专注奖励吗？`)) return;
+        try {
+            const res = await fetch('/api/teacher/class-bonus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ coins, reason: '全班守纪与专注基础奖励' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                this.setTicker(`🌟 已为全班 ${data.count} 位同学发放基础奖励 +${data.coins}💰！`);
+                await this.fetchStudents();
+            } else {
+                alert(data.message || '发放失败');
+            }
+        } catch (e) {
+            console.error('全班基础分发放失败', e);
+        }
+    }
+
+    openTeacherLeaderboard(boardId = null) {
+        this.openModal('modal-teacher-leaderboard');
+        this.loadTeacherLeaderboard(boardId || this.activeTeacherLbBoard || 'honor');
+    }
+
+    async loadTeacherLeaderboard(boardId = 'honor') {
+        const tabsEl = document.getElementById('teacher-lb-tabs');
+        const visEl = document.getElementById('teacher-lb-visibility-controls');
+        const descEl = document.getElementById('teacher-lb-desc');
+        const listEl = document.getElementById('teacher-lb-list');
+        if (!listEl) return;
+
+        listEl.innerHTML = '<div style="text-align:center; padding:26px; color:#64748b;">正在生成荣耀榜单...</div>';
+
+        try {
+            const res = await fetch(`/api/teacher/leaderboard?board=${encodeURIComponent(boardId)}`);
+            const data = await res.json();
+            if (!data.success) return;
+
+            const activeId = data.board?.id || 'honor';
+            this.activeTeacherLbBoard = activeId;
+            this.teacherVisibleBoards = Array.isArray(data.visibleBoards) ? data.visibleBoards : ['honor', 'darkhorse', 'collection', 'popularity'];
+
+            const allTypes = window.LEADERBOARD_TYPES || [];
+            if (tabsEl) {
+                tabsEl.innerHTML = allTypes.map(t =>
+                    `<button class="lb-tab-btn ${t.id === activeId ? 'active' : ''}" onclick="window.teacherApp.loadTeacherLeaderboard('${t.id}')">${t.icon} ${t.name}</button>`
+                ).join('');
+            }
+
+            if (visEl) {
+                visEl.innerHTML = allTypes.map(t => {
+                    const checked = this.teacherVisibleBoards.includes(t.id) ? 'checked' : '';
+                    return `
+                        <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-weight:700; color:#1E293B;">
+                            <input type="checkbox" ${checked} onchange="window.teacherApp.toggleBoardVisibility('${t.id}', this.checked)">
+                            ${t.icon} ${t.name}
+                        </label>
+                    `;
+                }).join('');
+            }
+
+            if (descEl && data.board) {
+                const extra = data.gradeInfo
+                    ? `<span>同年级共 ${data.gradeInfo.classCount} 个班参与排行</span>`
+                    : (activeId === 'darkhorse' ? `<span>当前冲刺周期：${data.currentPeriodKey}</span>` : '');
+                descEl.innerHTML = `<span>${data.board.icon} ${data.board.desc}（展示前 10 名）</span>${extra}`;
+            }
+
+            const topList = Array.isArray(data.topList) ? data.topList : [];
+            if (topList.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;">暂无上榜数据</div>';
+                return;
+            }
+
+            listEl.innerHTML = topList.map(row => {
+                const pet = row.pet || {};
+                const scene = this.resolvePetScene(pet);
+                const frameId = pet.currentFrame || 'default_wood';
+                const titleCfg = (window.TITLES_CATALOG || []).find(t => t.id === pet.currentTitle);
+                const titleHtml = titleCfg
+                    ? `<span class="title-badge ${titleCfg.style || 'cozy'}">${titleCfg.icon} ${titleCfg.name}</span>`
+                    : '';
+                const rankHtml = row.rankInfo
+                    ? `<span class="rank-badge" style="background:${row.rankInfo.bg}; color:${row.rankInfo.color};">${row.rankInfo.icon} ${row.rankInfo.name}</span>`
+                    : '';
+                const ribbonsHtml = Array.isArray(row.honorBadges) && row.honorBadges.length > 0
+                    ? row.honorBadges.slice(0, 2).map(b => `<span class="honor-ribbon top-${b.rank}">${b.label}</span>`).join('')
+                    : '';
+                const classTag = row.className ? `<span style="font-size:11px; color:#64748B;">[${row.className}]</span>` : '';
+                const topClass = row.rank <= 3 ? `lb-top-${row.rank}` : '';
+
+                return `
+                    <div class="lb-row frame-${frameId} ${topClass}">
+                        <div class="lb-rank-num">${row.rank <= 3 ? ['🥇', '🥈', '🥉'][row.rank - 1] : row.rank}</div>
+                        <div class="lb-avatar-mini" style="background-image: url('${scene.bgUrl}');">
+                            ${window.PetRenderer.renderSvg(pet.currentSkin, pet.accessories, pet.colorHue, 40, { level: pet.level || 1 })}
+                        </div>
+                        <div class="lb-info">
+                            <div class="lb-name-line">
+                                <span class="card-name" style="max-width:none;">${row.displayName}</span>
+                                ${classTag}
+                                ${rankHtml}
+                                ${titleHtml}
+                            </div>
+                            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
+                                <span class="card-no" style="font-size:11px;">Lv.${pet.level || 0}</span>
+                                ${ribbonsHtml}
+                            </div>
+                        </div>
+                        <div class="lb-score-val">${row.score}<div style="font-size:10px; font-weight:700; opacity:0.8;">${data.board?.unit || '分'}</div></div>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error('加载教师排行榜失败', e);
+            listEl.innerHTML = '<div style="text-align:center; padding:26px; color:#DC2626;">加载排行榜失败</div>';
+        }
+    }
+
+    async toggleBoardVisibility(boardId, checked) {
+        const current = new Set(this.teacherVisibleBoards || []);
+        if (checked) current.add(boardId);
+        else current.delete(boardId);
+        const nextList = Array.from(current);
+
+        try {
+            const res = await fetch('/api/teacher/leaderboard/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visibleBoards: nextList })
+            });
+            const data = await res.json();
+            if (data.success) {
+                this.teacherVisibleBoards = data.visibleBoards;
+                this.setTicker(`已更新学生端可见榜单（共 ${data.visibleBoards.length} 个开放）`);
+            }
+        } catch (e) {
+            console.error('更新榜单可见配置失败', e);
+        }
+    }
+
+    async resetDarkhorseBoard() {
+        if (!confirm('确定立即重置「黑马进步榜」吗？重置后将从现在起重新统计本节课/本轮新增积分！')) return;
+        try {
+            const res = await fetch('/api/teacher/leaderboard/reset-darkhorse', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                this.setTicker('🔄 已开启新一轮「黑马进步榜」冲刺！');
+                await this.fetchStudents();
+                this.loadTeacherLeaderboard('darkhorse');
+            }
+        } catch (e) {
+            console.error('重置黑马榜失败', e);
+        }
     }
 
     bindShortcuts() {

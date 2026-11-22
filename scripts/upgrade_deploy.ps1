@@ -246,12 +246,9 @@ if ($SourceDir.TrimEnd('\') -ine $ResolvedTarget.TrimEnd('\')) {
     }
 
     $rootFiles = @(
-        'package.json', 'package-lock.json', 'index.html', 'VERSION',
-        '电子宠物入口.html', '教师大屏入口.html', '查看与管理后台服务.bat',
-        '一键安装并启动保活服务.bat', '一键启动电子宠物积分系统.exe',
-        '一键升级部署.bat', '一键升级部署.exe',
-        '打开学生端.bat', '打开教师大屏.bat', '启动v2新版.bat', '停止服务.bat',
-        'start_silent.vbs', 'start_console.bat'
+        'package.json', 'package-lock.json', 'VERSION',
+        '电子宠物入口.html', '教师大屏入口.html',
+        '电子宠物控制台.exe', '一键升级部署.exe', '使用说明.txt'
     )
     foreach ($rf in $rootFiles) {
         $srcFile = Join-Path $SourceDir $rf
@@ -259,7 +256,20 @@ if ($SourceDir.TrimEnd('\') -ine $ResolvedTarget.TrimEnd('\')) {
             Copy-Item -LiteralPath $srcFile -Destination (Join-Path $ResolvedTarget $rf) -Force
         }
     }
-    Write-Host '  ✔ 程序文件合并完成' -ForegroundColor Green
+    $obsoleteFiles = @(
+        'index.html', 'start_console.bat', 'start_silent.vbs',
+        '一键升级部署.bat', '一键启动电子宠物积分系统.exe',
+        '一键安装并启动保活服务.bat', '停止服务.bat', '启动v2新版.bat',
+        '打包升级包.bat', '打开学生端.bat', '打开教师大屏.bat',
+        '查看与管理后台服务.bat'
+    )
+    foreach ($ob in $obsoleteFiles) {
+        $obPath = Join-Path $ResolvedTarget $ob
+        if (Test-Path -LiteralPath $obPath) {
+            Remove-Item -LiteralPath $obPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+    Write-Host '  ✔ 程序文件合并完成（并已清理旧版零散脚本）' -ForegroundColor Green
 } else {
     Write-Host '  ✔ 当前已在目标目录中，无需跨目录复制' -ForegroundColor Gray
 }
